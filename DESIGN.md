@@ -1,9 +1,21 @@
 # Nemo public website
 
-This change transfers the already-approved public announcement website to GitHub Pages. Preserve its visual design and interactions during the hosting move.
+## Visual direction
 
-The established design uses warm cream, near-black ink, sage, peach, and lilac. Georgia supplies the editorial headings; the system sans-serif stack supplies interface text. Large tightly spaced hero type, small uppercase section labels, miniature product UI, and small metadata are intentional parts of the approved visual direction. Main copy sizes and responsive rules are retained from the existing public site. No external fonts or UI dependencies are required.
+Show the product before explaining it. The audience is busy families: each section should have one short headline and a concrete visual example. Keep longer installation, privacy, and release explanations in expandable questions. Avoid stacked uppercase kickers, repeated closing pitches, and paragraphs that repeat the illustration.
 
-Keep content honest about the early-alpha status. All demonstrations are fictional, and public source/downloads are forthcoming. Explain local hosting and cloud-provider context accurately. Adult profiles are private in the app; child profiles have visible parent review.
+Retain warm cream (#f8f8f3), dark ink (#232820), sage, peach, and lilac. Georgia supplies the editorial headings; Segoe UI and the system sans-serif fallback supply interface text. Use no external fonts or UI dependencies. Main copy and demo conversations are 16px or larger. Smaller labels are reserved for illustrative interface metadata and captions, not feature explanations.
 
-Use relative paths for styles, scripts, and images under `/nemo/`, visible keyboard focus, accessible demo tabs, working mobile navigation, and reduced-motion support. Verify desktop and phone rendering when editing layouts.
+## Layout
+
+Use a 1120px maximum content width. Sections share 64px of padding above and below on desktop and 40px on phones, with a 4px spacing scale inside. A divider or background change marks each boundary; avoid additional spacer sections or overlapping per-section padding overrides. The main illustrations are a calendar/email-to-chat scene, separate family profiles, editable memory, connection switches, and a computer → invitation → phone setup diagram.
+
+On phones, stack the source and chat, retain all three family profiles, and show setup steps vertically. Verify from 320px to desktop widths with no horizontal scroll or clipped text.
+
+## Interaction and honesty
+
+Keep tabs accessible with arrow keys, Home/End, and a focusable tab panel. Memory Edit/Save/Cancel/Forget/Undo and the connection switches are browser-local demonstrations. Label them clearly as fictional; never send account requests, persist preferences, or imply they connect a visitor's real accounts. Preserve visible keyboard focus, native disclosure controls, mobile navigation, and reduced-motion support.
+
+Be explicit that Nemo is in private family testing and public app downloads are unavailable. Explain local storage and possible cloud-provider context in the FAQ. Adults have private profiles; children have visible parental review. Child mode illustrates hints rather than completing homework. Do not promise a release date or validated macOS support.
+
+Use relative assets under /nemo/. GitHub Pages publishes docs/ from main. VERSION and CHANGELOG track the website only.
