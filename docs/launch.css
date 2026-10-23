@@ -1,0 +1,20 @@
+/* Public announcement: an honest alpha status in place of unreleased install commands. */
+.launch-caption{font-size:10px;color:#798170;margin:15px 20px 0;line-height:1.7}
+.alpha-roadmap{align-self:center;background:#e9eddf;border:1px solid #dce3cf;border-radius:12px;padding:26px 28px;color:#3b4836;min-width:0}
+.roadmap-header{display:flex;align-items:center;gap:10px;font-size:8px;letter-spacing:.1em;color:#78866c;padding-bottom:25px;border-bottom:1px solid #d7dfcb}
+.roadmap-badge{margin-left:auto;font-size:7px;background:#d9e3c9;padding:5px 6px;border-radius:4px;white-space:nowrap}
+.alpha-roadmap ol{list-style:none;margin:29px 0 25px;padding:0}
+.alpha-roadmap li{display:flex;gap:17px;position:relative;padding-bottom:26px}
+.alpha-roadmap li:last-child{padding-bottom:0}
+.roadmap-dot{width:9px;height:9px;border:1px solid #b5c2a4;background:#e9eddf;border-radius:50%;flex-shrink:0;margin-top:4px;position:relative;z-index:1}
+.alpha-roadmap li.current .roadmap-dot{background:#748d5d;border-color:#748d5d;box-shadow:0 0 0 4px #dae4ca}
+.alpha-roadmap li:not(:last-child):after{content:'';position:absolute;left:4px;top:13px;bottom:0;width:1px;background:#ccd6bd}
+.roadmap-phase{font-size:7px;letter-spacing:.13em;color:#89977c}
+.alpha-roadmap h3{font:26px/1.15 var(--serif);letter-spacing:-.7px;margin:8px 0}
+.alpha-roadmap li p{font-size:12px;line-height:1.7;color:#78866c}
+.roadmap-footer{border-top:1px solid #d7dfcb;padding-top:18px;color:#7e8c71;font-size:10px;line-height:1.8}
+.start-copy h2{font-size:60px}
+.start-copy .start-small{max-width:330px;font-size:10px;line-height:1.8}
+@media(max-width:1000px) and (min-width:761px){.alpha-roadmap{padding:23px 20px}.roadmap-header{font-size:7px;gap:8px}.roadmap-badge{font-size:6px}.start-copy h2{font-size:52px}.alpha-roadmap h3{font-size:24px}}
+@media(max-width:760px){.launch-caption{font-size:9px;max-width:270px;margin:13px auto 0;padding:0 10px}.alpha-roadmap{padding:24px 22px}.roadmap-header{font-size:7px;gap:8px}.roadmap-badge{font-size:6px}.alpha-roadmap li p{font-size:12px}.alpha-roadmap h3{font-size:26px}.roadmap-footer{font-size:10px}.start-copy h2{font-size:56px}.start-copy .start-small{font-size:10px}.alpha-link{font-size:8px}.alpha-tag{font-size:6px}}
+@media(max-width:360px){.alpha-roadmap{padding:22px 18px}.roadmap-header{font-size:6px}.alpha-roadmap h3{font-size:24px}.start-copy h2{font-size:50px}.alpha-link{font-size:7px}.alpha-tag{font-size:6px}}
