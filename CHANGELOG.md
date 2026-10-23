@@ -7,7 +7,7 @@ These entries track the public website. An installable Nemo app has not been rel
 ### Added
 
 - The Nemo project announcement website at `https://ddzz12138.github.io/nemo/`.
-- Interactive calendar, memory, and child-mode illustrations, with a clear early-alpha status and public-download availability.
+- Interactive calendar, memory, and child-mode illustrations, with a clear early-alpha status and explicit notice that public app downloads are not available yet.
 
 ### Changed
 

@@ -8,6 +8,6 @@ This repository currently publishes the project announcement website from `docs/
 
 The website contains fictional product examples and has no connection to a family's private Nemo server. The `VERSION` and `CHANGELOG.md` currently track the website publication, not an installable app release.
 
-Website updates go through a pull request. After merging to `main`, GitHub Pages publishes `docs/`. Keep `.nojekyll` in that folder and use relative asset paths so the site works under `/nemo/`.
+Configure GitHub **Settings → Pages → Deploy from a branch → `main` → `/docs`** once. Website updates then go through a pull request; after merging to `main`, GitHub Pages publishes `docs/`. Keep `.nojekyll` in that folder and use relative asset paths so the site works under `/nemo/`.
 
 Nemo is being built as free, open-source software under the MIT license. A home computer, compatible Hermes setup, and any AI-provider usage costs are separate.
