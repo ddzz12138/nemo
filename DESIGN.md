@@ -1,21 +1,29 @@
 # Nemo public website
 
-## Visual direction
+## Direction
 
-Show the product before explaining it. The audience is busy families: each section should have one short headline and a concrete visual example. Keep longer installation, privacy, and release explanations in expandable questions. Avoid stacked uppercase kickers, repeated closing pitches, and paragraphs that repeat the illustration.
+A warm editorial story about one family afternoon, inspired by Moonshot's visual composition and Ghost's continuity between scenes. Create original artwork and copy; never copy competitor imagery, names, endorsements, claims, or product interactions. The user asked for stronger visuals and a plot after finding the previous feature-card page unconvincing.
 
-Retain warm cream (#f8f8f3), dark ink (#232820), sage, peach, and lilac. Georgia supplies the editorial headings; Segoe UI and the system sans-serif fallback supply interface text. Use no external fonts or UI dependencies. Main copy and demo conversations are 16px or larger. Smaller labels are reserved for illustrative interface metadata and captions, not feature explanations.
+The plot: 3:10 pm, scattered school-trip details become one useful answer; 4 pm, a paper plane turns into a child's curious question; 6:15 pm, a remembered preference makes dinner suggestions personal. Return to the opening family scene with more room for being together. A single Nemo phone connects the desktop chapters. On mobile every chapter contains its own complete, readable conversation.
 
-## Layout
+## Visual language
 
-Use a 1120px maximum content width. Sections share 64px of padding above and below on desktop and 40px on phones, with a 4px spacing scale inside. A divider or background change marks each boundary; avoid additional spacer sections or overlapping per-section padding overrides. The main illustrations are a calendar/email-to-chat scene, separate family profiles, editable memory, connection switches, and a computer → invitation → phone setup diagram.
+Use original editorial family imagery with pale sky, warm oak, cream paper, sage, and natural sunlight. Avoid dollhouses, isometric toy graphics, generic feature grids, emoji decoration, and repeated rounded cards. Phone UI and handwritten paper slips serve the story; use restrained shadows and a physical sense of material.
 
-On phones, stack the source and chat, retain all three family profiles, and show setup steps vertically. Verify from 320px to desktop widths with no horizontal scroll or clipped text.
+Dark garden ink #25342b, paper #f7f5ef, sage #e2e9da, peach #f1dfcd, lilac #e9e2ee. Georgia headings, Segoe UI/system sans UI. Bold editorial hero; quieter section headings. Main copy and conversations at least 16px. Smaller type only for illustrative interface metadata and captions. No external fonts, UI frameworks, or runtime dependencies.
 
-## Interaction and honesty
+Content width 1120px with 48px desktop gutters and 20px phone gutters. Main section padding 64px desktop / 40px phone; story chapters are sized for their scenes rather than full empty viewports. Use a 4px spacing scale. No scroll hijacking, automatic advancement, infinite ambient animation, or hidden-until-revealed copy. Respect reduced motion.
 
-Keep tabs accessible with arrow keys, Home/End, and a focusable tab panel. Memory Edit/Save/Cancel/Forget/Undo and the connection switches are browser-local demonstrations. Label them clearly as fictional; never send account requests, persist preferences, or imply they connect a visitor's real accounts. Preserve visible keyboard focus, native disclosure controls, mobile navigation, and reduced-motion support.
+## Interaction and access
 
-Be explicit that Nemo is in private family testing and public app downloads are unavailable. Explain local storage and possible cloud-provider context in the FAQ. Adults have private profiles; children have visible parental review. Child mode illustrates hints rather than completing homework. Do not promise a release date or validated macOS support.
+The scroll-linked desktop phone is a visual duplicate, hidden from assistive technology. Each chapter retains its own accessible conversation. If JavaScript is unavailable, the inline conversations remain visible. Story links navigate to normal anchors. Family profiles use roving accessible tabs, arrows, wraparound and Home/End. Memory edit/cancel/save/forget/undo changes the fictional dinner example; permission switches change the fictional answer; child-mode choices show explanations or homework hints. All examples reset on reload and never connect to accounts or store data.
 
-Use relative assets under /nemo/. GitHub Pages publishes docs/ from main. VERSION and CHANGELOG track the website only.
+Preserve visible focus, native disclosures, mobile navigation, readable text, and horizontal-overflow checks from 320px to desktop. Retain old #everyday and #memory anchor targets.
+
+## Truthfulness and release
+
+Fictional family and illustrative conversations, with AI-generated artwork identified in the footer and asset provenance. Nemo is in private family testing; public app downloads are unavailable. Public app source/setup instructions will accompany the first release. No launch date, validated macOS, continuous listening, proactive assistance, health integration, or all-local AI claims.
+
+Adults have private profiles; child profiles have visible parental review. Calendar/Gmail are read only and chosen by the profile. Local GBrain stores memory; configured Hermes cloud models may receive conversation context and enabled tool results. Keep those details accessible in the FAQ.
+
+GitHub Pages publishes docs/ from main, with relative assets under /nemo/. VERSION and CHANGELOG are website-only. Do not publish private application data or modify the legacy Sites redirect checkout.
