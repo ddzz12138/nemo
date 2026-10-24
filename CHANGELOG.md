@@ -2,6 +2,16 @@
 
 These entries track the public website. An installable Nemo app has not been released.
 
+## [0.0.3.0] - 2026-10-24
+
+### Changed
+
+- Rebuilt the announcement page around one family afternoon: school-trip details, a child's curious question, and a personal dinner suggestion.
+- Added original family and paper-plane imagery, a scroll-linked desktop conversation, and complete inline mobile scenes.
+- Connected demo settings, homework hints, memory editing, and private-profile examples to the story; all remain page-local and fictional.
+- Added accessible conversation updates, no-JavaScript navigation, and layouts for shorter desktop windows.
+- Retained early-alpha availability, local/cloud privacy details, child-review visibility, and website-only release scope.
+
 ## [0.0.2.0] - 2026-10-24
 
 ### Changed
