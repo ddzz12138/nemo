@@ -1,70 +1,104 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f5ef">
-  <title>Nemo — A little less on your mind.</title>
-  <meta name="description" content="Meet Nemo, your family’s open-source AI. Plans, questions, and the little things — with a home on your computer. In private family testing.">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Nemo — A little less on your mind.">
-  <meta property="og:description" content="Follow one family afternoon with Nemo. A little less keeping track. A little more being here.">
-  <meta property="og:url" content="https://ddzz12138.github.io/nemo/">
-  <meta property="og:image" content="https://ddzz12138.github.io/nemo/assets/story/afternoon-home.webp">
-  <meta property="og:image:alt" content="An illustrative family afternoon: a mother and child making a paper plane in a sunlit home.">
-  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#fff9f5">
+  <meta name="description" content="Meet Nemo, a personal AI experience for families, built around Hermes. Explore the vision, see the guided setup and follow the early preview.">
+  <title>Nemo — A personal AI. For everyone at home.</title>
   <link rel="canonical" href="https://ddzz12138.github.io/nemo/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Nemo — A personal AI. For everyone at home.">
+  <meta property="og:description" content="Meet Nemo, a personal AI experience for families, built around Hermes. Explore the vision, see the guided setup and follow the early preview.">
+  <meta property="og:url" content="https://ddzz12138.github.io/nemo/">
+  <meta property="og:image" content="https://ddzz12138.github.io/nemo/assets/nemo-social.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Nemo. A personal AI. For everyone at home.">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="assets/nemo-icon.svg" type="image/svg+xml">
-  <link rel="preload" as="image" href="assets/story/afternoon-home.webp">
   <link rel="stylesheet" href="styles.css">
   <script src="app.js" defer></script>
 </head>
-<body>
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header">
-    <a href="#" class="wordmark" aria-label="Nemo home"><span class="nemo-mark" aria-hidden="true">n</span>nemo.</a>
-    <button class="menu-toggle" aria-label="Open navigation" aria-expanded="false" aria-controls="main-nav"><span></span><span></span></button>
-    <nav id="main-nav" aria-label="Main navigation"><a href="#afternoon">An afternoon with Nemo</a><a href="#family">Your family</a><a href="#how-it-works">How it works</a></nav>
-    <a class="button small-button" href="https://github.com/ddzz12138/nemo" target="_blank" rel="noopener noreferrer">Follow the project <span aria-hidden="true">↗</span></a>
-  </header>
-  <main id="main">
-    <section class="hero" aria-labelledby="hero-title">
-      <img class="hero-photo" src="assets/story/afternoon-home.webp" alt="An illustrative mother and child making a paper plane together in a warm, sunlit home." width="1672" height="941" fetchpriority="high">
-      <div class="hero-content wrap"><a class="alpha-link" href="#start"><span aria-hidden="true"></span>Open source. Growing at home. ↗</a><h1 id="hero-title">A little less<br>on your <span class="hand-underline">mind.</span></h1><p>Your family’s AI companion.<br>A little help with the everyday.</p><a class="button" href="#afternoon">Spend an afternoon with Nemo <span aria-hidden="true">↓</span></a><span class="alpha-caption">Private family testing · No public downloads yet</span></div>
-      <div class="phone hero-phone"><div class="phone-status" aria-hidden="true"><span>3:10</span><span class="phone-island"></span><span>••• ▰</span></div><div class="phone-header"><span class="phone-menu" aria-hidden="true">☰</span><span class="phone-brand">nemo.</span><span class="phone-person">M</span></div><div class="phone-body"><span class="conversation-person">Your afternoon, untangled</span><p class="user-bubble">What do we need for tomorrow?</p><span class="tool-note">Found the school email</span><div class="nemo-reply"><p>A raincoat.<br>A nut-free lunch.<br><strong>You’ve got this.</strong></p></div></div><div class="phone-composer" aria-hidden="true"><span>Ask Nemo…</span><span>↑</span></div><div class="phone-home" aria-hidden="true"></div></div>
-      <div class="hero-peek"><span class="nemo-mark" aria-hidden="true">n</span><div><span>Nemo · Product illustration</span><p>A raincoat. A nut-free lunch.<br><strong>You’ve got this.</strong></p></div></div>
-      <span class="hero-scene-label">A little more room for the good bits.</span>
-    </section>
-    <div class="principles wrap"><span><span aria-hidden="true">⌂</span>Hosted at home</span><span><span aria-hidden="true">◎</span>Personal to each of you</span><span><span aria-hidden="true">&lt;/&gt;</span>Open source</span></div>
+<body data-page="home">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header wrap">
+  <a class="wordmark" href="./" aria-label="Nemo home">nemo<span>.</span></a>
+  <nav aria-label="Main navigation">
+    <a class="nav-about" href="about.html">About Nemo <span aria-hidden="true">↗</span></a>
+    <a class="button nav-how" href="how-it-works.html">How it works <svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+  </nav>
+</header>
+<main id="main">
 
-    <section class="afternoon wrap" id="afternoon" aria-labelledby="afternoon-title">
-      <div class="story-intro" id="everyday"><span class="chapter-label">A THURSDAY WITH NEMO</span><h2 id="afternoon-title">Life doesn’t happen<br>one tab at a time.</h2><p>Let’s take a little off your mind.</p></div>
-      <div class="story-layout">
-        <div class="story-chapters">
-          <article class="chapter is-active" id="chapter-plans" data-chapter="plans" aria-labelledby="plans-title"><div class="chapter-time"><span aria-hidden="true"></span><time>3:10 pm</time><span>Before the school run</span></div><h3 id="plans-title">The email.<br>The thing you forgot.</h3><p>One question. The details fall into place.</p>
-            <div class="paper-scene"><div class="calendar-slip"><span class="slip-label">YOUR CALENDAR</span><span class="slip-time">9:00 am</span><strong>Museum trip</strong><span>Tomorrow</span></div><div class="mail-slip"><span class="slip-label">FROM THE SCHOOL OFFICE</span><strong>For tomorrow’s trip</strong><p>Raincoat<br>Nut-free lunch</p><span class="paper-check" aria-hidden="true">✓</span></div></div>
-            <details class="demo-settings"><summary>Calendar & Gmail · You choose the access <span aria-hidden="true">＋</span></summary><div class="demo-switches"><button role="switch" aria-label="Demo calendar access" aria-checked="true" data-connection="calendar"><span>Calendar<small>Read only</small></span><span class="switch-track" aria-hidden="true"><span></span></span></button><button role="switch" aria-label="Demo Gmail access" aria-checked="true" data-connection="gmail"><span>Gmail<small>Read only</small></span><span class="switch-track" aria-hidden="true"><span></span></span></button></div><p>Demo switches. No accounts are connected.</p></details>
-            <div class="phone chapter-phone"><div class="phone-status" aria-hidden="true"><span>3:10</span><span class="phone-island"></span><span>••• ▰</span></div><div class="phone-header"><span class="phone-menu" aria-hidden="true">☰</span><span class="phone-brand">nemo.</span><span class="phone-person">M</span></div><div class="phone-body"><span class="conversation-person">Maya’s afternoon</span><p class="user-bubble">What have I missed for tomorrow?</p><span class="tool-note">Calendar + Gmail · Read only</span><div class="nemo-reply" data-plan-reply role="status"><p>The museum trip starts at <strong>9 am</strong>.</p><p>Pack a <strong>raincoat</strong> and a <strong>nut-free lunch</strong>.</p></div><span class="reply-source">From your calendar & the school email</span></div><div class="phone-composer" aria-hidden="true"><span>Ask Nemo…</span><span>↑</span></div><div class="phone-home" aria-hidden="true"></div></div>
-          </article>
-          <article class="chapter" id="chapter-learning" data-chapter="learning" aria-labelledby="learning-title"><div class="chapter-time"><span aria-hidden="true"></span><time>4:00 pm</time><span>Home, and curious</span></div><h3 id="learning-title">Big questions.<br>Little lightbulbs.</h3><p>A nudge to discover it for themselves.</p><figure class="plane-scene"><img src="assets/story/paper-plane.webp" alt="A folded paper plane on a sunlit wooden table, beside a child’s drawing." width="1536" height="1024" loading="lazy"><figcaption>“But how does it fly?”</figcaption></figure><div class="question-choices" aria-label="Try child mode"><button aria-pressed="true" data-learning="curiosity">A curious question</button><button aria-pressed="false" data-learning="homework">A homework shortcut?</button></div>
-            <div class="phone chapter-phone"><div class="phone-status" aria-hidden="true"><span>4:00</span><span class="phone-island"></span><span>••• ▰</span></div><div class="phone-header"><span class="phone-menu" aria-hidden="true">☰</span><span class="phone-brand">nemo.</span><span class="phone-person">J</span></div><div class="phone-body"><span class="conversation-person">Jamie’s big question</span><p class="user-bubble" data-learning-question>Why do paper planes fly?</p><span class="tool-note">Child mode · Let’s figure it out</span><div class="nemo-reply" data-learning-reply role="status"><p>The wings push air down, and the air pushes the plane up.</p><p>Try changing the wings. Which shape flies farther?</p></div><span class="reply-source">Curiosity welcome. Shortcuts less so.</span></div><div class="phone-composer" aria-hidden="true"><span>Ask Nemo…</span><span>↑</span></div><div class="phone-home" aria-hidden="true"></div></div>
-          </article>
-          <article class="chapter" id="chapter-memory" data-chapter="memory" aria-labelledby="memory-title"><div class="chapter-time"><span aria-hidden="true"></span><time>6:15 pm</time><span>A familiar conversation</span></div><h3 id="memory-title">Less starting over.<br>More “you know me.”</h3><p>The little things you share can stay with you.</p><div class="memory-paper" id="memory"><div class="memory-paper-top"><span class="nemo-mark" aria-hidden="true">n</span><span>Maya’s memory</span><span class="saved-tag">Saved fact</span></div><div id="memory-fact"><span class="field-label">Food preference</span><div class="fact-row"><strong id="fact-value">Vegetarian</strong><div><button class="text-button" id="edit-memory" aria-label="Edit demo food preference">Edit</button><button class="text-button" id="forget-memory" aria-label="Forget demo food preference">Forget</button></div></div></div><form id="memory-form" hidden><label for="food-preference">Food preference</label><select id="food-preference"><option>Vegetarian</option><option>Pescatarian</option></select><div class="edit-actions"><button class="button small-button" type="submit">Save change</button><button class="text-button" id="cancel-edit" type="button">Cancel</button></div></form><div id="memory-empty" hidden><p>Forgotten. Your call.</p><button class="text-button" id="undo-memory">Undo</button></div></div><p class="demo-caption" id="memory-status" role="status">Try Edit or Forget. Demo only; nothing is saved.</p>
-            <div class="phone chapter-phone"><div class="phone-status" aria-hidden="true"><span>6:15</span><span class="phone-island"></span><span>••• ▰</span></div><div class="phone-header"><span class="phone-menu" aria-hidden="true">☰</span><span class="phone-brand">nemo.</span><span class="phone-person">M</span></div><div class="phone-body"><span class="conversation-person">Back with Maya</span><p class="user-bubble">Something easy for dinner?</p><span class="tool-note">Using Maya’s saved preference</span><div class="nemo-reply" data-dinner-reply role="status"><p>How about <strong>chickpea pasta</strong>?</p><p>Vegetarian. A few ingredients. Dinner in about 20 minutes.</p></div><span class="reply-source">A little context. A more useful answer.</span></div><div class="phone-composer" aria-hidden="true"><span>Ask Nemo…</span><span>↑</span></div><div class="phone-home" aria-hidden="true"></div></div>
-          </article>
-        </div>
-        <aside class="story-sticky" aria-label="Follow the afternoon"><nav class="story-nav" aria-label="Afternoon chapters"><a href="#chapter-plans" aria-current="step" data-story-link="plans">3:10<span>Plans</span></a><a href="#chapter-learning" data-story-link="learning">4:00<span>Curiosity</span></a><a href="#chapter-memory" data-story-link="memory">6:15<span>Memory</span></a></nav><div id="sticky-holder" aria-hidden="true"></div><span class="phone-demo-label">Fictional conversations. A real idea of Nemo.</span></aside>
-      </div>
-    </section>
+  <section class="hero wrap" aria-labelledby="hero-title">
+    <p class="eyebrow"><span class="orange-dot" aria-hidden="true"></span> Personal AI, made for family <span class="preview-tag">Early preview</span></p>
+    <h1 id="hero-title">A personal AI.<br>For everyone <em>at home.</em></h1>
+    <p class="hero-description">Plan your day. Grow your ideas.<br>Keep a little less in your head.</p>
+    <div class="hero-actions"><a class="button" href="#possibilities">Explore Nemo <svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16m-6-6 6 6 6-6"/></svg></a><a class="text-link" href="about.html">About Nemo <span aria-hidden="true">↗</span></a></div>
+    <svg class="hero-doodle" viewBox="0 0 100 60" aria-hidden="true"><path d="M4 28C30 6 73 8 90 24M87 12l6 14-16 4M38 47l5-9m13 14 1-10"/></svg>
+  </section>
 
-    <section class="family-section" id="family" aria-labelledby="family-title"><div class="wrap family-layout"><div><span class="chapter-label">EVERYONE GETS THEIR OWN NEMO</span><h2 id="family-title">Same home.<br>Different worlds.</h2><p>Your chats, connections and memory<br>stay in your profile.</p><div class="home-note"><svg viewBox="0 0 64 56" aria-hidden="true"><rect x="5" y="3" width="54" height="36" rx="4"/><path d="M26 39v10m12-10v10M19 50h26"/><path d="m24 21 6-6 6 6m-12 0v9h12v-9"/></svg><span>One home computer.<br>A personal space for everyone.</span></div></div><div class="family-demo"><div class="profile-tabs" role="tablist" aria-label="Explore family profiles"><button id="profile-maya" role="tab" aria-selected="true" aria-controls="profile-panel" data-profile="maya"><span class="avatar sage" aria-hidden="true">M</span>Maya</button><button id="profile-alex" role="tab" aria-selected="false" aria-controls="profile-panel" tabindex="-1" data-profile="alex"><span class="avatar peach" aria-hidden="true">A</span>Alex</button><button id="profile-jamie" role="tab" aria-selected="false" aria-controls="profile-panel" tabindex="-1" data-profile="jamie"><span class="avatar lilac" aria-hidden="true">J</span>Jamie</button></div><div class="profile-panel" id="profile-panel" role="tabpanel" tabindex="0" aria-labelledby="profile-maya"><div class="profile-panel-header"><span class="profile-window-dots" aria-hidden="true">•••</span><span id="profile-name">Maya’s space</span><span class="profile-status" id="profile-status">Private profile</span></div><div class="personal-detail"><span aria-hidden="true">▦</span><div><small id="profile-label-one">Calendar</small><strong id="profile-detail-one">Tomorrow’s museum trip</strong></div></div><div class="personal-detail"><span aria-hidden="true">✳</span><div><small id="profile-label-two">Memory</small><strong id="profile-detail-two">Vegetarian. Learning Italian.</strong></div></div><p id="profile-note">Only Maya’s personal context.</p></div><p class="demo-caption">Try a profile. These are fictional examples.</p></div></div></section>
+  <section class="vision-section wrap" id="possibilities" aria-label="Explore Nemo’s possibilities">
+    <span id="everyday" class="anchor-alias" aria-hidden="true"></span>
+    <div class="vision-grid">
+      <figure class="outing-figure">
+        <div class="figure-top"><span class="eyebrow"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h3m3 0h3"/></svg> A day out, together</span><span class="feature-status">Future vision</span></div>
+        <h2>“Plan a family outing.”</h2>
+        <div class="calendar-title"><strong>Saturday</strong><span>Three shared calendars</span></div>
+        <table class="availability-table" aria-label="Illustrative shared calendar availability on Saturday">
+          <thead><tr><td></td><th scope="col">10–11</th><th scope="col" class="selected-time">11–12</th><th scope="col" class="selected-time">12–1</th><th scope="col">1–2</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><span class="person-dot " aria-hidden="true">S</span><span>Sam</span></th><td class="busy"><span class="sr-only">Busy</span></td><td class="available shared"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span class="sr-only">Free</span></td><td class="available shared"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span class="sr-only">Free</span></td><td class="available"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span class="sr-only">Free</span></td></tr>
+            <tr><th scope="row"><span class="person-dot peach" aria-hidden="true">A</span><span>Alex</span></th><td class="available"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span class="sr-only">Free</span></td><td class="available shared"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span class="sr-only">Free</span></td><td class="available shared"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span class="sr-only">Free</span></td><td class="busy"><span class="sr-only">Busy</span></td></tr>
+            <tr><th scope="row"><span class="person-dot outlined" aria-hidden="true">J</span><span>Jamie</span></th><td class="busy"><span class="sr-only">Busy</span></td><td class="available shared"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span class="sr-only">Free</span></td><td class="available shared"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span class="sr-only">Free</span></td><td class="available"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span class="sr-only">Free</span></td></tr>
+          </tbody>
+        </table>
+        <div class="calendar-legend"><span><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg> Free</span><span><i class="busy-key" aria-hidden="true"></i> Busy</span></div>
+        <div class="outing-result"><span class="result-check"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span><div><strong>Saturday, 11–1.</strong><span>Everyone’s free. Picnic at the park?</span></div><svg class="picnic-art" viewBox="0 0 100 65" aria-hidden="true"><circle cx="75" cy="14" r="9"/><path d="M4 56c16-15 30-13 45-6 16-15 31-13 47 0M18 42h42l-5 19H23l-5-19ZM28 42c0-22 23-22 23 0M18 47h42M31 48v11m10-11v11m9-11v11"/></svg></div>
+        <figcaption>Family planning is a future feature. Each person chooses what to share.</figcaption>
+      </figure>
 
-    <section class="home-base wrap" id="how-it-works" aria-labelledby="home-base-title"><h2 id="home-base-title">At home on your computer.<br>At hand on your phone.</h2><div class="setup-line"><span>⌂ <strong>Run Nemo + Hermes</strong></span><span aria-hidden="true">→</span><span>↗ <strong>Send a personal invite</strong></span><span aria-hidden="true">→</span><span>▯ <strong>Open on your phone</strong></span></div><p>Private connection. Computer awake and online. <a href="#questions">The details ↗</a></p></section>
+      <figure class="child-figure">
+        <div class="figure-top"><span class="eyebrow"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4 5 5M4 20l5-1L21 7a2.1 2.1 0 0 0-4-4L5 15l-1 5Z"/></svg> Child mode</span><span class="mode-label">Guided learning</span></div>
+        <h2>Hints that help<br>them learn.</h2>
+        <div class="homework-slip" aria-hidden="true"><span>LET’S WORK IT OUT</span><div><span class="fraction"><b>3</b><b>4</b></span><span>+</span><span class="fraction"><b>1</b><b>8</b></span><span>= ?</span></div><i></i><i></i></div>
+        <p class="request-bubble">“Do my homework for me.”</p>
+        <div class="nemo-reply"><span class="nemo-mark " aria-hidden="true">n</span><p>Let’s work it out together.<br>What have you tried?</p></div>
+        <ol class="learning-path"><li>A hint</li><li>Their thinking</li><li>Understanding</li></ol>
+        <figcaption>Parent-set tools. Visible parent review.</figcaption>
+      </figure>
+    </div>
+    <div class="principle-strip"><span><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 7.4L22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6L12 2Z"/></svg> Open source</span><span><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></svg> Personal to each of you</span><span><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11H3V10Z"/><path d="M9 21v-8h6v8"/></svg> Hosted at home</span></div>
+  </section>
 
-    <section class="resolution" id="start" aria-labelledby="start-title"><img src="assets/story/afternoon-home.webp" alt="" width="1672" height="941" loading="lazy"><div class="wrap"><span class="chapter-label">BACK TO THE GOOD BITS</span><h2 id="start-title">Less keeping track.<br>More being here.</h2><p>An open-source family AI.<br>Still growing at home.</p><a class="button" href="https://github.com/ddzz12138/nemo" target="_blank" rel="noopener noreferrer">Follow Nemo on GitHub <span aria-hidden="true">↗</span></a><span class="alpha-caption">Private family testing. Public app downloads aren’t ready yet.</span></div></section>
+  <section class="personal-section wrap" id="family" aria-labelledby="personal-title">
+    <div class="section-heading"><p class="eyebrow">Same question. Personal replies.</p><h2 id="personal-title">Personal responses.<br>For everyone <em>in the family.</em></h2></div>
+    <div class="shared-question">“What should I do this afternoon?”</div>
+    <svg class="response-branches" viewBox="0 0 960 40" preserveAspectRatio="none" aria-hidden="true"><path d="M480 0v18M160 40V18h640v22M480 18v22"/></svg>
+    <div class="personal-responses">
+      <figure class="personal-response"><div class="person-heading"><span class="person-dot " aria-hidden="true">S</span><span>Sam</span></div><span class="context-label">Prefers quiet walks</span><blockquote>“Take a gentle walk<br>by the river.”</blockquote><div class="personal-illustration river-art" aria-hidden="true"><svg viewBox="0 0 180 65"><path d="M4 48c22-17 35 15 60-1s39 16 62-1 31 6 50 0M4 59c22-17 35 15 60-1s39 16 62-1 31 6 50 0M32 34V7m-10 16 10-15 10 15m-17-5 7-12 7 12M142 33V5m-12 18 12-18 12 18"/></svg></div></figure>
+      <figure class="personal-response"><div class="person-heading"><span class="person-dot peach" aria-hidden="true">A</span><span>Alex</span></div><span class="context-label">Training for a 10K</span><blockquote>“Try a short,<br>easy run.”</blockquote><div class="personal-illustration" aria-hidden="true"><svg class="icon large-drawing" viewBox="0 0 24 24" aria-hidden="true"><circle cx="16" cy="4" r="2"/><path d="m12 9 4 3 4-1m-8-2-3 5 5 3-2 5m0-13 3-2m-6 7-4 1-3 5"/></svg><svg class="run-track" viewBox="0 0 100 45"><path d="M4 35c16-5 25 7 45 0s29-6 47-1M4 43c16-5 25 7 45 0s29-6 47-1"/></svg></div></figure>
+      <figure class="personal-response"><div class="person-heading"><span class="person-dot outlined" aria-hidden="true">J</span><span>Jamie</span></div><span class="context-label">Loves space · Child mode</span><blockquote>“Build a paper rocket.<br>What could help it fly straight?”</blockquote><div class="personal-illustration" aria-hidden="true"><svg class="icon large-drawing" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3c3-1 6-1 7 0 1 5-3 11-8 14l-6-6c2-4 5-7 7-8ZM7 11l-4 1-1 5 7-2m4 2-1 5 5-1 1-6M5 19l-2 2"/><circle cx="16" cy="7" r="2"/></svg><span class="little-star">✳</span></div></figure>
+    </div>
+  </section>
 
-    <section class="faq-section wrap" id="questions" aria-labelledby="faq-title"><h2 id="faq-title">A few good questions.</h2><div class="faq-list"><details><summary>When can I try Nemo?<span aria-hidden="true">＋</span></summary><p>There’s no launch date yet. We’re testing with family before an invited Windows alpha. Public app source and setup instructions will accompany the first release. macOS support needs validation.</p></details><details><summary>Is Nemo free?<span aria-hidden="true">＋</span></summary><p>Nemo’s software will be free under the MIT license. You provide the computer and compatible Hermes setup. Your chosen AI provider may charge for usage.</p></details><details><summary>What stays on my computer?<span aria-hidden="true">＋</span></summary><p>Profiles, chats, and local GBrain memory are stored at home. Replies use the model provider configured in Hermes. A cloud provider receives conversation context and enabled tool results; local hosting doesn’t make every AI request local.</p></details><details><summary>Can family members see my conversations?<span aria-hidden="true">＋</span></summary><p>Adult profiles have separate chats, memory, and accounts. Your other devices can resume your profile. Parents can review child conversations and memory, and that review is visible to the child.</p></details><details><summary>Will it do my child’s homework?<span aria-hidden="true">＋</span></summary><p>Child mode offers hints and explanations to help children learn. Parents choose which tools are available. It’s an early feature, and we’ll keep improving it.</p></details><details><summary>How does the phone connect?<span aria-hidden="true">＋</span></summary><p>Through your private HTTPS connection, such as Tailscale. Keep your computer awake and online, open Nemo in your phone’s browser, and add it to your home screen. This public website never accesses your family’s server.</p></details></div></section>
-  </main>
-  <footer class="site-footer wrap"><a class="wordmark" href="#" aria-label="Nemo home"><span class="nemo-mark" aria-hidden="true">n</span>nemo.</a><span>An independent companion for Hermes.</span><a href="https://github.com/ddzz12138/nemo" target="_blank" rel="noopener noreferrer">GitHub ↗</a><a href="#questions">Questions ↗</a><small>© 2026 Nemo contributors · MIT<br>Fictional family, AI-generated imagery, illustrative conversations.</small></footer>
+  <section class="routine-section wrap" id="memory" aria-labelledby="routine-title">
+    <div class="routine-copy"><p class="eyebrow">Less repeating yourself</p><h2 id="routine-title">Gets better<br><em>as you use it.</em></h2><p>Your routines, <br>shaped together.</p></div>
+    <div class="routine-story" aria-label="Illustrative school-email routine refined through remembered feedback">
+      <div class="routine-stage"><span class="stage-label"><b>01</b> First time</span><div class="routine-icon"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 7 9-7"/></svg></div><p class="routine-request">“Summarise the <br>school emails.”</p><div class="email-lines" aria-hidden="true"><span>Newsletter</span><i></i><span>Trip · Uniform · Updates</span><i></i></div></div>
+      <div class="routine-stage feedback-stage"><span class="stage-label"><b>02</b> Make it yours</span><span class="nemo-mark " aria-hidden="true">n</span><p class="routine-request">“Only actions. <br>Deadlines first. <br>Remember that.”</p><span class="remembered"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg> Preference remembered</span></div>
+      <div class="routine-stage result-stage"><span class="stage-label"><b>03</b> Next time</span><p class="routine-request">“School update?”</p><ul class="school-checklist"><li><span>FRI</span><strong>Return trip form</strong><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></li><li><span>MON</span><strong>Pack PE kit</strong><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></li></ul><span class="routine-result-caption">The checklist that works for you.</span></div>
+    </div>
+    <p class="routine-note">Gmail and memory need their own setup. You control what’s remembered.</p>
+  </section>
+
+  <section class="about-invite wrap"><div><p class="eyebrow">Built in the open</p><h2>Built with Hermes.<br><em>Made for Family.</em></h2></div><a class="button button-outline" href="about.html">About Nemo <svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a></section>
+
+</main>
+<footer class="site-footer wrap" id="start">
+  <div class="footer-top"><a class="wordmark" href="./" aria-label="Nemo home">nemo<span>.</span></a><p>Built with Hermes. Made for Family.</p><nav aria-label="Footer"><a class="" href="https://github.com/ddzz12138/nemo" target="_blank" rel="noopener noreferrer">GitHub<span aria-hidden="true">↗</span></a><a href="about.html#questions">Questions <span aria-hidden="true">↗</span></a></nav></div>
+  <div class="footer-bottom"><p>Windows development preview. Public downloads are being prepared.</p><p>Hosted on your computer. Connected AI providers receive context for replies.</p><span>© 2026 Nemo contributors · MIT license · Fictional examples</span></div>
+</footer>
 </body>
 </html>
