@@ -2,6 +2,16 @@
 
 These entries track the public website. An installable Nemo app has not been released.
 
+## [0.0.4.0] - 2026-10-25
+
+### Changed
+
+- Rebranded the announcement website in orange with three pages: Home, How it works, and About Nemo.
+- Replaced family photography and handset mockups with original calendar, guided-learning, personal-response, and school-email illustrations.
+- Showed how remembered feedback can turn school emails into a familiar deadline-first checklist; kept Gmail and memory setup requirements visible.
+- Explained Nemo's family experience around the same Hermes engine, with detailed comparisons and privacy answers in native disclosures.
+- Preserved the approved setup sequence, legacy section links, early-preview limits, and existing GitHub Pages hosting.
+
 ## [0.0.3.0] - 2026-10-24
 
 ### Changed
