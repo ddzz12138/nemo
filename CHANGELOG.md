@@ -2,6 +2,12 @@
 
 These entries track the public website. An installable Nemo app has not been released.
 
+## [0.0.4.1] - 2026-10-25
+
+### Fixed
+
+- Versioned stylesheet, script and icon links so returning visitors receive matching assets after the orange website update.
+
 ## [0.0.4.0] - 2026-10-25
 
 ### Changed
