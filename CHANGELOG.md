@@ -2,6 +2,18 @@
 
 These entries track the public website. An installable Nemo app has not been released.
 
+## [0.0.5.0] - 2026-10-26
+
+### Changed
+
+- Applied the approved Ranade typography, warm orange/peach lighting and product-split layout across Home, How it works and About.
+- Added the stationary phone illustration, named action bubble and complete-message arrival. The conversation loops after five seconds, with the family-audience animation starting two seconds after each completed conversation. Both pause off screen, with safe static fallbacks and reduced-motion support.
+- Added transparent glass navigation that hides on downward scrolling, returns on upward scrolling and remains available to keyboard users on all three pages.
+- Made the public GitHub repository easy to find beneath the homepage buttons.
+- Reworked family availability, Child mode, personal responses and the school-email memory story into varied visual compositions; preserved setup disclosures and Hermes credit.
+- Prepared separately licensed fonts at deployment time with exact checksum checks, keeping font binaries out of the public source and third-party font requests out of the live page.
+- Added dependency-free integrity checks and a GitHub Pages verification/deployment workflow. Rollout requires switching Pages Source to GitHub Actions.
+
 ## [0.0.4.1] - 2026-10-25
 
 ### Fixed
