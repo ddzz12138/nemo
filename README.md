@@ -10,6 +10,8 @@ The website contains fictional product examples and has no connection to a famil
 
 Home shows the vision; **How it works** shows the guided desktop setup; **About Nemo** explains Hermes and Nemo's family features. Shared family-calendar planning is labelled as a future feature. Optional connections and personal memory need their own setup.
 
+The footer links to **Privacy**, **Terms & safety**, **Licences & credits**, and the public contact address. These explain the website and self-hosted app separately, connected-provider data handling and the current invited-adult preview. They do not claim Google verification or approval for children to use a particular AI account. Public child access remains pending provider and safety review.
+
 ## Preview and verification
 
 Use Node.js 24 or later; there are no npm dependencies.

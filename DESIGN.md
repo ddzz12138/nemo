@@ -26,6 +26,12 @@ The glass capsule stays fixed over the page while its header preserves the origi
 
 Check keyboard focus, skip links, disclosures, browser history and layouts from 320px through desktop. Respect reduced motion and retain relative asset paths for /nemo/.
 
+## Policy pages
+
+Privacy, Terms & safety and Licences & credits share an editorial layout: left-aligned Ranade heading, orange emphasis, an updated date, three compact icon summaries and a readable content column. A visual You → Nemo at home → AI provider route explains sharing. Desktop has a sticky contents column; phones use an in-flow two-column index and stacked summaries. Policy tabs shorten to Privacy / Terms / Credits on narrow screens while retaining their full accessible names. Navigation targets remain at least 44px high. Summary components use 15px text on desktop and 14px on phones; full policy text is 16px.
+
+Use native details for additional Google, retention and licence explanations; core data flow and preview eligibility stay visible. All six pages share Privacy / Terms & safety / Licences & credits / Contact footer links. Contact is the owner-approved public email, with no form or new tracking. Identify the operator as Dan Zheng, Australia. The current app preview is for invited adults aged 18 and over; public child access awaits provider and safety review. Do not claim Google verification, enabled zero data retention or legal certification.
+
 ## Truthfulness and release
 
 Examples are fictional. Shared-calendar outing planning is explicitly future work, with each person's choice to share; current calendars are private. Child mode supports guided learning and visible parent review, without promising to prevent every workaround. Personal responses require personal context; memory and connections need their own setup.
