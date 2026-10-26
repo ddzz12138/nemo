@@ -2,6 +2,18 @@
 
 These entries track the public website. An installable Nemo app has not been released.
 
+## [0.0.6.0] - 2026-10-27
+
+### Added
+
+- Added Privacy, Terms & safety and Licences & credits pages with short summaries, a visual data-sharing route and expandable details.
+- Added policy and contact links to every footer, with the operator's confirmed name and email.
+- Clarified that the current app preview is for invited adults aged 18 and over, with public child access pending provider and safety review.
+
+### Changed
+
+- Extended navigation, sitemap and integrity checks to all six pages, preserving the existing homepage and guided setup.
+
 ## [0.0.5.0] - 2026-10-26
 
 ### Changed

@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const docs = join(root, 'docs');
-const pages = ['index.html', 'how-it-works.html', 'about.html'];
+const pages = ['index.html', 'how-it-works.html', 'about.html', 'privacy.html', 'terms.html', 'licences.html'];
 const version = (await readFile(join(root, 'VERSION'), 'utf8')).trim();
 const load = path => readFile(path, 'utf8');
 const text = html => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -56,7 +56,7 @@ test('every documented Node preview/check command is available in a fresh clone'
   for (const [, file] of commands) await access(join(root, file));
 });
 
-test('all three pages use one release identity for the shared CSS, script and icon', () => {
+test('all pages use one release identity for the shared CSS, script and icon', () => {
   for (const [page, html] of htmls) {
     for (const asset of ['styles.css', 'app.js', 'assets/nemo-icon.svg']) {
       assert.ok(html.includes(`${asset}?v=${version}`), `${page}: mismatched ${asset}`);
@@ -141,7 +141,31 @@ test('all pages retain canonical/social metadata, preview limits and the family 
   }
   await access(join(docs, '.nojekyll'));
   const sitemap = await load(join(docs, 'sitemap.xml'));
-  for (const route of ['', 'how-it-works.html', 'about.html']) assert.ok(sitemap.includes(`https://ddzz12138.github.io/nemo/${route}`));
+  for (const route of pages.map(page => page === 'index.html' ? '' : page)) assert.ok(sitemap.includes(`https://ddzz12138.github.io/nemo/${route}`));
+});
+
+test('policies are reachable from every footer and their contents links resolve', () => {
+  for (const [page, html] of htmls) {
+    const footer = html.match(/<footer[\s\S]*?<\/footer>/)?.[0];
+    assert.ok(footer, page);
+    for (const route of ['privacy.html', 'terms.html', 'licences.html']) assert.ok(footer.includes(`href="${route}"`), `${page}: ${route}`);
+    assert.ok(footer.includes('href="mailto:dan.zheng@danos.com.au"'));
+    if (!['privacy.html', 'terms.html', 'licences.html'].includes(page)) continue;
+    assert.equal((html.match(/aria-current="page"/g)||[]).length, 1, 'one selected policy tab');
+    assert.ok(html.includes('aria-label="On this page"'));
+    for (const [, anchor] of html.matchAll(/href="#([^"]+)"/g)) assert.ok(ids(html).includes(anchor), `${page}: ${anchor}`);
+  }
+});
+
+test('privacy and safety copy preserve data-flow, preview and deletion limits', () => {
+  const privacy = text(htmls.get('privacy.html'));
+  const terms = text(htmls.get('terms.html'));
+  assert.ok(privacy.includes('Dan Zheng, Australia'));
+  for (const page of ['privacy.html', 'terms.html', 'licences.html']) assert.ok(!/\[.*to confirm\]|TODO|example\.com/.test(htmls.get(page)), 'publish only resolved policy copy');
+  for (const phrase of ['logs visitors’ IP addresses', 'Relevant chat context', 'Limited Use requirements', 'Signing out does not by itself delete', 'AI provider can remain', 'invited adult testers aged 18 and over', 'Public access for children']) assert.ok(privacy.includes(phrase), phrase);
+  assert.ok(terms.includes('does not by itself establish permission for every family member'));
+  assert.ok(terms.includes('rights or remedies that cannot lawfully be excluded'));
+  assert.ok(!/Google verified|guaranteed safe|all data stays on your computer|zero data retention is enabled/i.test(privacy + terms));
 });
 
 test('two unmodified local WOFF2 weights resolve with matching release URLs', async () => {
