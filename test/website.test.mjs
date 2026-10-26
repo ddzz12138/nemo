@@ -49,6 +49,13 @@ test('all page/asset links and cross-page anchors resolve under the Pages prefix
   assert.deepEqual(await linkErrors(docs, pages), []);
 });
 
+test('every documented Node preview/check command is available in a fresh clone', async () => {
+  const readme = await load(join(root, 'README.md'));
+  const commands = [...readme.matchAll(/^node (?:--test |--check )?([^\s]+\.m?js)\r?$/gm)];
+  assert.ok(commands.length >= 4, 'documented setup and verification commands');
+  for (const [, file] of commands) await access(join(root, file));
+});
+
 test('all three pages use one release identity for the shared CSS, script and icon', () => {
   for (const [page, html] of htmls) {
     for (const asset of ['styles.css', 'app.js', 'assets/nemo-icon.svg']) {

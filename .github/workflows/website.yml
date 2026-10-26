@@ -2,10 +2,10 @@ name: Verify and deploy Nemo website
 
 on:
   pull_request:
-    paths: ['docs/**', 'scripts/prepare-fonts.mjs', 'test/**', 'VERSION', '.github/workflows/website.yml']
+    paths: ['docs/**', 'scripts/prepare-fonts.mjs', 'preview-pages.mjs', 'test/**', 'VERSION', '.github/workflows/website.yml']
   push:
     branches: [main]
-    paths: ['docs/**', 'scripts/prepare-fonts.mjs', 'test/**', 'VERSION', '.github/workflows/website.yml']
+    paths: ['docs/**', 'scripts/prepare-fonts.mjs', 'preview-pages.mjs', 'test/**', 'VERSION', '.github/workflows/website.yml']
   workflow_dispatch:
 
 permissions:
