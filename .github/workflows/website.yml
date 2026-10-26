@@ -1,0 +1,62 @@
+name: Verify and deploy Nemo website
+
+on:
+  pull_request:
+    paths: ['docs/**', 'scripts/prepare-fonts.mjs', 'preview-pages.mjs', 'test/**', 'VERSION', '.github/workflows/website.yml']
+  push:
+    branches: [main]
+    paths: ['docs/**', 'scripts/prepare-fonts.mjs', 'preview-pages.mjs', 'test/**', 'VERSION', '.github/workflows/website.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nemo-pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Prepare separately licensed website fonts
+        run: node scripts/prepare-fonts.mjs
+      - name: Verify release contracts
+        run: node --test test/website.test.mjs
+      - name: Check JavaScript syntax
+        run: node --check docs/app.js
+      - name: Configure Pages
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+      - name: Prepare Pages artifact
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy the verified website
+        id: deployment
+        uses: actions/deploy-pages@v5
