@@ -2,6 +2,13 @@
 
 These entries track the public website. An installable Nemo app has not been released.
 
+## [0.0.6.1] - 2026-10-29
+
+### Changed
+
+- Made the upcoming open-source app release clear at the top of Home, with Going open source in the existing label style.
+- Moved Follow on GitHub beside Explore Nemo and clarified that app source is coming soon.
+
 ## [0.0.6.0] - 2026-10-27
 
 ### Added

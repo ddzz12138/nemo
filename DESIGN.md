@@ -12,7 +12,7 @@ Ranade regular/medium for website copy and headings, with platform typography in
 
 The desktop stage is 500px high, with an intentional lower phone crop and an external caption. At the 960px stacking breakpoint, copy comes first and the stage shows the full phone. Body and screen proportions, Dan's label, message bubbles, status bar and separate +/input pill follow the approved preview. Original inline SVG diagrams remain; no family photography is loaded.
 
-The hero's Early preview line includes a charcoal GitHub icon and View on GitHub link. It aligns with the hero copy, has a 44px hit target, and gains an orange underline on hover/focus. The existing footer repository link remains.
+The hero begins with Going open source in the existing uppercase eyebrow style. Follow on GitHub sits beside Explore Nemo, with the charcoal repository icon and orange hover/focus underline. The action row wraps on narrow screens. Early preview · App source coming soon appears below, accurately distinguishing the planned app source release from the public website repository. The navigation retains About Nemo and How it works, and the footer retains its repository link.
 
 Main website copy is at least 16px and critical preview, future-feature and consent labels at least 14px. The phone scales as a single artwork with a full accessible transcript. Functional controls have 44px minimum targets and visible focus. Lower-page content is at most 1120px wide with narrow-screen gutters. No scroll hijacking or hidden-until-revealed substantive copy.
 
