@@ -1,7 +1,7 @@
 @charset "UTF-8";
 /* Nemo shared styles: tokens, content illustrations and approved product layout. */
-@font-face{font-family:Ranade;font-style:normal;font-weight:400;font-display:swap;src:url('assets/fonts/ranade-regular.woff2?v=0.0.6.0') format('woff2')}
-@font-face{font-family:Ranade;font-style:normal;font-weight:500;font-display:swap;src:url('assets/fonts/ranade-medium.woff2?v=0.0.6.0') format('woff2')}
+@font-face{font-family:Ranade;font-style:normal;font-weight:400;font-display:swap;src:url('assets/fonts/ranade-regular.woff2?v=0.0.6.1') format('woff2')}
+@font-face{font-family:Ranade;font-style:normal;font-weight:500;font-display:swap;src:url('assets/fonts/ranade-medium.woff2?v=0.0.6.1') format('woff2')}
 .figure-top .eyebrow {
   display:flex;
   align-items:center;
@@ -1381,6 +1381,9 @@ button:disabled {
   padding:0 22px 0 0;
   max-width:590px;
 }
+.hero-eyebrow {
+  margin-bottom:16px;
+}
 .hero h1 {
   font:500 clamp(46px,4.8vw,72px)/1.055 var(--sans);
   letter-spacing:-.055em;
@@ -1426,6 +1429,7 @@ button:disabled {
 }
 .hero-actions {
   display:flex;
+  flex-wrap:wrap;
   align-items:center;
   gap:26px;
   font-size:14px;
