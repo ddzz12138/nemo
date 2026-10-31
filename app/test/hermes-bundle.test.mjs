@@ -26,6 +26,8 @@ async function fixture(t, additions = {}) {
 test('Hermes source policy packages runtime modules and excludes personal state, local installers and caches', () => {
   for (const path of ['run_agent.py', 'hermes_bootstrap.py', 'agent/agent_init.py', 'pm/lock.json', 'LICENSE', 'pyproject.toml', 'skills/example/SKILL.md']) assert.equal(allowedHermesSource(path), true, path);
   for (const path of ['.env', '.env.example', '.hermes/auth.json', '.git/config', 'agent/__pycache__/x.pyc', 'tests/test_agent.py', 'agent/credentials.json', 'sessions.json', 'agent/private.key', 'tools/key.pem', 'apps/desktop/main.py', 'setup-hermes.ps1', '../outside.py', 'agent\\unsafe.py']) assert.equal(allowedHermesSource(path), false, path);
+  assert.equal(allowedHermesSource('optional-skills/security/unbroker/SKILL.md'), false);
+  for (const path of ['plugins/security-guidance/LICENSE','plugins/security-guidance/NOTICE','skills/productivity/docx/LICENSE']) assert.equal(allowedHermesSource(path), true, path);
 });
 
 test('full inventory verifies relative bytes and remains valid after folder relocation', async t => {

@@ -1,5 +1,6 @@
 import { lstat, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { verifyHermesSource, HERMES_SOURCE_ROOT } from './hermes-source.mjs';
 
 const forbiddenDirectory = /^(?:node_modules|__pycache__|out|coordination|research|website-design|\.nemo|\.work|\.git|\.cache|\.cursor|\.codex)$/i;
 const forbiddenFile = /(?:\.(?:dpapi|db|sqlite3?|log|pem|key|pfx|p12|exe|dll|nupkg|tgz|woff2?|ttf|jpg|jpeg|png)$|^(?:\.env(?:\..*)?|auth\.json|nemo\.json|state\.json|profiles\.json|gmail-tokens\.json|config\.json)$)/i;
@@ -15,10 +16,24 @@ const unsafeContent = [
 /** Check explicitly inventoried source, never traverse the developer's data. */
 export async function verifyPublicSource(root, paths) {
   if (!Array.isArray(paths) || !paths.length || paths.some(x => typeof x !== 'string')) throw new Error('A nonempty source inventory is required.');
+  const hasHermes = paths.some(path => path.startsWith(HERMES_SOURCE_ROOT + '/'));
+  let vendorPins;
+  if (hasHermes) {
+    const manifest = JSON.parse(await readFile(join(root,'desktop/hermes-source.json'),'utf8'));
+    await verifyHermesSource(root,manifest);
+    vendorPins = new Set(manifest.files.map(item=>item.path));
+  }
   const unique = new Set();
   for (const file of paths) {
     if (!file || file.includes('\\') || file.startsWith('/') || /^[A-Za-z]:/.test(file)) throw new Error('Invalid source inventory path.');
     const parts = file.split('/');
+    // Vendor source has a separate exact-byte manifest and reviewed upstream
+    // binary/example policy. Keep the application's stricter policy unchanged.
+    if (file.startsWith(HERMES_SOURCE_ROOT + '/') && !['.gitattributes','UPSTREAM.md'].includes(parts.slice(2).join('/'))) {
+      if (parts.some(x => !x || x === '.' || x === '..') || unique.has(file) || !vendorPins.has(parts.slice(2).join('/'))) throw new Error('Invalid vendor inventory path.');
+      unique.add(file);
+      continue;
+    }
     if (parts.some(x => !x || x === '.' || x === '..' || forbiddenDirectory.test(x)) || forbiddenFile.test(parts.at(-1))) throw new Error(`Excluded source path: ${file}`);
     if (unique.has(file)) throw new Error(`Duplicate source path: ${file}`);
     unique.add(file);

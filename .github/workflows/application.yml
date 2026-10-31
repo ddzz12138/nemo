@@ -41,6 +41,8 @@ jobs:
           npm run desktop:interface:build
       - name: Bootstrap the locked Electron runtime explicitly
         run: npm run desktop:bootstrap
+      - name: Prepare the pinned browser-test runtime
+        run: npx --no-install playwright install chromium
       - name: Check source inventory and syntax
         run: |
           npm run check:source -- --tracked

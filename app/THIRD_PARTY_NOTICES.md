@@ -1,5 +1,16 @@
 # Third-party notices
 
+The reviewed Hermes runtime snapshot lives in `vendor/hermes-source/`, with exact
+source provenance/hashes in `desktop/hermes-source.json`. Its MIT licence and
+nested third-party licences/notices remain beside their code. Apache-2.0 adapted
+portions retain their source comments and terms in
+`vendor/hermes-source/plugins/security-guidance/LICENSE`: OpenAI hatch-pet
+(`agent/pet/generate/atlas.py`), Roo-Code (`tools/file_tools_write_guards.py`),
+block/goose (`tools/schema_sanitizer.py`), and QwenLM/qwen-code
+(`tools/vision_tools_image_prep.py`, Copyright 2026 Qwen). These credits are also
+included in the generated runtime notice. Optional skill packs and their
+separately licensed datasets are excluded from Nemo's restricted runtime.
+
 The optional desktop chat interface adapts Ollama's MIT-licensed SidebarLayout
 from commit `8861adaa77839c961d3c574232a8865d65a426b6`. Its copyright and permission
 notice ships at `public/vendor/ollama-LICENSE.txt`. The source provenance and

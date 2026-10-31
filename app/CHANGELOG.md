@@ -73,3 +73,12 @@ offsite relay acceptance remain separate checks.
   protected records, alongside unchanged-file checks.
 - This source revision does not claim a signed installer, clean-PC pass or public
   download. Those remain separate candidate and installation-pilot gates.
+# 0.3.0-alpha.17 — Reproducible Windows candidate preparation
+
+- Include the audited public Hermes runtime snapshot, source hashes, licences and
+  attributions; omit optional skill packs with separate dataset/licence requirements.
+- Acquire exact public Python and wheel artifacts with checked hashes and sizes,
+  then reuse the existing sealed-runtime and relocation verification.
+- Require actual native, browser, runtime and MCP execution in candidate tests.
+- Add scoped signing and immutable unpublished-draft delivery. A trusted signing
+  identity, actual clean-PC installation/update and adult acceptance remain required.

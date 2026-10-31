@@ -1,6 +1,6 @@
 {
   "name": "nemo-local-agent",
-  "version": "0.3.0-alpha.16",
+  "version": "0.3.0-alpha.17",
   "private": true,
   "type": "module",
   "main": "desktop/main.cjs",
@@ -60,7 +60,9 @@
     "phone:prepare": "node scripts/prepare-phone-assets.mjs",
     "phone:check": "electron test/fixtures/phone-browser-check.cjs",
     "phone:export": "node scripts/prepare-phone-assets.mjs && node scripts/export-phone-app.mjs",
-    "check:source": "node scripts/check-public-source.mjs"
+    "check:source": "node scripts/check-public-source.mjs",
+    "desktop:prepare:candidate": "node scripts/prepare-candidate-runtime.mjs",
+    "test:release": "node scripts/test-release.mjs"
   },
   "dependencies": {
     "@simplewebauthn/browser": "14.0.0",
@@ -75,7 +77,9 @@
     "@electron-forge/cli": "8.0.1",
     "@electron-forge/maker-squirrel": "8.0.1",
     "@electron-forge/maker-zip": "8.0.1",
-    "electron": "45.0.0"
+    "@electron/windows-sign": "2.1.0",
+    "electron": "45.0.0",
+    "playwright": "1.64.1"
   },
   "config": {
     "forge": "./forge.config.mjs"
