@@ -14,17 +14,12 @@ import { discoverHermes } from '../lib/hermes-runtime.mjs';
 import { configureNativePreview } from '../lib/native-chat.mjs';
 
 const [command = 'help', ...args] = process.argv.slice(2);
-const help = 'Nemo — Hermes, for your family\n\n  nemo setup       Guided local setup\n  nemo doctor      Read-only setup checks\n  nemo assistant local\n                   Use local Ollama Gemma 4 12B; no cloud fallback\n  nemo start       Run in this terminal\n  nemo stop        Stop this installation’s managed process\n  nemo invite      Create a private invitation for your owner profile\n  nemo gmail FILE  Import your Google Web OAuth client locally\n  nemo preview off Disable the optional native chat preview\n  nemo preview enable MODE [PYTHON SOURCE HERMES_HOME]\n                   Enable native chat with profile-controlled read tools\n\nNo credentials belong in chat. Data stays on this host.\n';
+const help = 'Nemo — Hermes, for your family\n\n  nemo setup       Guided local setup\n  nemo doctor      Read-only setup checks\n  nemo start       Run in this terminal\n  nemo stop        Stop this installation’s managed process\n  nemo invite      Create a private invitation for your owner profile\n  nemo gmail FILE  Import your Google Web OAuth client locally\n  nemo preview off Disable the optional native chat preview\n\nRequires a ChatGPT subscription. Relevant context is sent to ChatGPT for replies. No credentials belong in chat.\n';
 async function main() {
   if (['help', '--help', '-h'].includes(command)) { console.log(help); return; }
   const config = await loadConfig();
   if (command === 'assistant' && args.length === 1 && args[0] === 'local') {
-    const { selectLocalAssistant } = await import('../lib/desktop-assistant.mjs');
-    const { checkLocalOllama } = await import('../lib/local-ollama.mjs');
-    await selectLocalAssistant(config.dataDir);
-    const status = await checkLocalOllama();
-    console.log(status.connected ? 'Local Gemma 4 12B selected. Restart Nemo to apply. ChatGPT grants and saved chats are preserved.' : 'Local Gemma selected. ' + status.message);
-    return;
+    throw new Error('This version requires a ChatGPT subscription. Open Nemo Settings to connect. Local models are not supported.');
   }
   if (command === 'host-setup' && !args.length) {
     const { startDesktopHost } = await import('../lib/desktop-host.mjs');
@@ -42,8 +37,8 @@ async function main() {
   }
   if(command==='preview'){
     if(args.length===1&&args[0]==='off')await configureNativePreview({dataDir:config.dataDir,enabled:false});
-    else if(args[0]==='enable'&&[2,5].includes(args.length))await configureNativePreview({dataDir:config.dataDir,enabled:true,apiMode:args[1],pythonPath:args[2]||config.hermesPython,sourceRoot:args[3]||config.hermesSource,hermesHome:args[4]||config.hermesHome||discoverHermes().hermesHome});
-    else throw new Error('Use nemo preview off, or nemo preview enable codex_responses|chat_completions [PYTHON SOURCE HERMES_HOME].');
+    else if(args[0]==='enable')throw new Error('The alternative-provider preview is not available in this release. Use your ChatGPT subscription in Nemo Settings.');
+    else throw new Error('Use nemo preview off. Connect your ChatGPT subscription in Nemo Settings.');
     console.log('Preview setting saved. Restart this Nemo installation to apply it. Main chat, saved Memory and connections are preserved. Read tools require each profile’s saved consent.');return;
   }
   if (command === 'doctor') {

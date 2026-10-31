@@ -1,28 +1,24 @@
 # Nemo — Hermes, for your family
 
+**First public version: ChatGPT subscription only.** Use an eligible ChatGPT plan in Nemo’s guided desktop setup. No local AI model, Ollama installation, API key or model download is required or offered. Profiles and chat history stay on the PC; relevant conversation context is sent to ChatGPT for replies. Automatic Memory/embeddings, School notice and alternative-provider previews are deferred. Existing data is preserved.
+
+
 **Source preview.** The first signed Windows x64 candidate and clean-PC pilot are
 not yet released. Build instructions below are for contributors, not the
 nontechnical installation journey. ChatGPT receives relevant conversation context;
 this pilot does not claim that AI inference runs entirely on your PC.
 
 Nemo is an independent, MIT-licensed desktop home for Hermes Agent, with phone access for the family. It adds
-private family profiles, easier Google sign-in, understandable Memory and visible
+private family profiles, easier Google sign-in, private history and visible
 agent activity. Windows and macOS are the initial host targets.
 
-**This is an alpha foundation, not the completed full-tool migration.** Existing
-main chat uses the guarded Hermes CLI bridge. An optional native chat
-preview uses private Hermes homes and a host-only provider/read-tool broker. Its
-two-profile synthetic inference and private-history resume checks passed. A
-separate Docker probe verified the sandbox boundary; a complete Hermes container,
-full native history migration, advanced tools and live-provider acceptance remain
-unfinished. Do not enable unrestricted tools by changing a toolset flag.
-See docs/IMPLEMENTATION.md.
+Main chat uses the guarded Hermes CLI bridge through the ChatGPT subscription broker. Advanced native-provider and local-model work remains experimental source, disabled in public entry points. Do not enable unrestricted tools by changing a toolset flag.
 
 ## Parent setup preview
 
 The desktop uses one Ollama-derived interface from first launch to daily chat:
 name, included assistant preparation, ChatGPT connection, private history,
-Memory, Family and Settings, without a model picker or a second setup window.
+Family and Settings, without a model picker or a second setup window.
 The frontend uses Nemo's existing authenticated backend; it does not require
 installing Ollama. See `docs/OLLAMA_INTERFACE.md` for provenance, checks and the
 remaining Gmail/public-release requirements.
@@ -70,28 +66,24 @@ docs/DESKTOP_SETUP.md and docs/REMOTE_SERVICE.md.
   to continue, with drafts kept separately for each conversation.
 
 - Personal invitations and device sessions with private histories, calendar
-  snapshots, Gmail grants and GBrain Memory per person.
+  snapshots and Gmail grants per person.
 - Personal passkey sign-in and explicit authenticated profile switching, while
   retaining invitation recovery. Child profiles start with chat only; the owner
   enables each tool separately.
-- Visible, read-only parental review of child chat history and personal Memory,
+- Visible, read-only parental review of child chat history,
   with an audit visible to the child. Adults remain private in the application.
 - Google Web OAuth, focused read-only search with pagination, optional bounded
   snippet sync, inspection and clear/stop controls.
 - iPhone Calendar Shortcut uploads. Calendar stays outside Memory.
-- Small editable memories and a derived summary, local learning and embeddings,
-  correction/deletion and protection against automatic re-saving.
-- Actual live tool activity and post-reply memory outcomes.
+- Actual live tool activity. Private conversations remain accessible through History.
 - Tools/readiness, family classification, recent reply tasks and stopping a reply.
 - Guided phone setup at `/setup.html`.
 - Opt-in built-in phone connection at `/phone-access.html`: personal QR pairing,
   static HTTPS phone interface, encrypted WebRTC, reconnect and optional TURN.
   It stays off until an operator deploys the static interface. Real iPhone
   cellular acceptance is pending; see docs/PHONE_ACCESS_SETUP.md.
-- Optional native chat at `/native-chat.html`: live replies/status, private native
-  continuity, stopping and durable request deduplication. It starts a separate
-  conversation, and now uses the same permitted Memory/Gmail/Calendar reads and
-  local learning as the main chat. History migration remains unfinished.
+- Experimental Memory, local models and native-provider code remain available for
+  development tests; the public application does not enable them.
 
 Main chat retains the 90-second Hermes budget, six-call cap and roughly two-minute
 timeout. Native chat enforces ten active minutes and up to 64 scoped read calls,
@@ -101,8 +93,8 @@ remain unavailable until their full execution boundaries are implemented.
 ## Install and run
 
 Use Node.js 22+ and a configured, compatible Hermes installation. From source:
-`npm ci --ignore-scripts`, `node bin/nemo.mjs setup`,
-`node bin/nemo.mjs doctor`, `node bin/nemo.mjs start`.
+`npm ci --ignore-scripts`, `node bin/nemo.mjs host-setup`. Complete ChatGPT
+sign-in in the guided setup. Later, `node bin/nemo.mjs start` reuses that connection.
 Install a release archive with `npm install -g ./nemo-VERSION.tgz` to use `nemo`.
 Run `nemo invite` on the host to create your private owner invitation.
 `nemo stop` addresses this installation's managed CLI process, never an arbitrary PID.
@@ -132,23 +124,19 @@ needs real-device verification. Reconnect accounts when moving operating systems
   Web OAuth app with the exact
   `https://YOUR-NEMO-HOST/oauth/gmail/callback` URI. Import its JSON locally with
   `nemo gmail /absolute/path/client.json`; each person then uses Connect Gmail.
-- Memory needs compatible GBrain/Bun runtime paths in the private engine template,
-  Ollama with `nomic-embed-text`, and a local review model. Set `NEMO_MEMORY_MODEL`
-  to an installed model. No weights download automatically. Guided host Memory
-  dependency setup remains unfinished.
+- Automatic Memory and local-model features are deferred; no Ollama models are
+  required. Previous experimental stores are preserved. Gmail account changes
+  fail closed if old Memory copies still need cleanup.
 - Scalekit is optional. Its adapter remains planned; direct Gmail does not need it.
-- A host can opt into the source-pinned native chat preview with
-  `nemo preview enable codex_responses` or `chat_completions`, using runtime paths
-  saved by setup. Optional `PYTHON SOURCE HERMES_HOME` positional paths can be
-  supplied on the host. Restart Nemo after changing this setting. No model call
-  occurs during setup; readiness is established by a successful reply.
-  `nemo preview off` disables it after restart without deleting saved data.
+- The alternative-provider native preview cannot be enabled in this release.
+  `nemo preview off` remains available to disable an older experimental setting.
 
 ## Privacy
 
 Authenticated devices determine profile identity; model arguments cannot change it.
-Each person has private account grants and Memory. Connections consent governs
-retrieved material sent to the chat provider. Memory learning/embeddings stay local.
+Each person has private account grants and chat history. Connections consent
+governs retrieved material sent to ChatGPT. Automatic Memory learning and
+embeddings are disabled in the public app.
 
 The existing CLI bridge still uses the host Hermes home with shared context and
 memory injection disabled. Preview native homes are separate per person, with

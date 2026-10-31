@@ -36,12 +36,10 @@ export async function startDesktopHost({ dataDir, resourcesPath, openExternal = 
   async function startApp() {
     config = await loadConfig({ dataDir });
     const nodeExecutable = runtime.bundle?.node?.executablePath;
-    const localModel = assistant.localModel?.();
     const next = await createApp({ dataDir, publicOrigin, installationId, trustedProxy, logger() {},
-      // Both modes are pinned routes. Local never consults cloud credentials;
-      // ChatGPT remains explicit and resolves renewable tokens at reply time.
+      // Public v1 has one inference route, with renewable subscription tokens.
       hermesOptions: { launcher: config.hermesLauncher || undefined, hermesHome: config.hermesHome || undefined, hermesPython: config.hermesPython, hermesSource: config.hermesSource,
-        requireChatGPT: !localModel, ...(localModel ? { localModel, localStatus: () => assistant.status() } : {}), chatgptSession: () => assistant.credentials(), chatgptStatus: () => assistant.status(), onChatGPTFailure: code => assistant.reportInferenceFailure?.(code), ...(nodeExecutable ? { nodeExecutable } : {}) },
+        requireChatGPT: true, chatgptSession: () => assistant.credentials(), chatgptStatus: () => assistant.status(), onChatGPTFailure: code => assistant.reportInferenceFailure?.(code), ...(nodeExecutable ? { nodeExecutable } : {}) },
       // This separate preview has its own provider settings. Preserve its saved
       // data, but do not expose another inference/billing path in desktop setup.
       nativeFactory: null,
@@ -71,7 +69,7 @@ export async function startDesktopHost({ dataDir, resourcesPath, openExternal = 
       }),
       onConnected: async information => {
         await serialize(restart);
-        if (information?.planUsageEnabled === true || information?.localOnly === true) {
+        if (information?.planUsageEnabled === true) {
           try { await onAssistantConnected(); } catch { /* Focus is helpful, not a condition of a valid account grant. */ }
         }
       },

@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { randomBytes, randomInt, randomUUID, createHash, timingSafeEqual } from 'node:crypto';
-import { mkdir, readFile, writeFile, rename, stat } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, stat, lstat } from 'node:fs/promises';
 import { resolve, dirname, extname, join, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -117,7 +117,16 @@ export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDi
   let memory = { async list() { throw new MemoryError(503, 'Memory is not available.', 'MEMORY_UNAVAILABLE'); }, async get() { throw new MemoryError(503, 'Memory is not available.', 'MEMORY_UNAVAILABLE'); }, async save() { throw new MemoryError(503, 'Memory is not available.', 'MEMORY_UNAVAILABLE'); }, async preview() { throw new MemoryError(503, 'Memory is not available.', 'MEMORY_UNAVAILABLE'); }, async remove() { throw new MemoryError(503, 'Memory is not available.', 'MEMORY_UNAVAILABLE'); } };
   const memoryConfirmations=new Map();
   let gbrain = null; let engine = { connected: false }; let memoryConnection;
-  let mirror = { status: () => ({ sources: { gmail: false, calendar: false }, configured: false }), async clear() {}, async sync() {}, async syncAll() {}, async configure() {} };
+  async function clearDeferredMemory() {
+    // Public v1 defers model-backed Memory. An old experimental store may still
+    // hold inbox copies: a no-op mirror must never pretend it removed them.
+    if (profile && !memoryFactory) for (const name of ['gbrain-runtime.json', 'gbrain-data', 'memory-mirror.json']) {
+      try { await lstat(join(dataDir, name)); }
+      catch (error) { if (error.code === 'ENOENT') continue; throw new GmailError('GMAIL_MEMORY_CLEANUP', 'Nemo could not verify previous Gmail memory copies. Your saved data was preserved.'); }
+      throw new GmailError('GMAIL_MEMORY_CLEANUP', 'This profile has saved Memory from an earlier build. Clear its Gmail copies in that build before changing Google accounts. Your saved data was preserved.');
+    }
+  }
+  let mirror = { status: () => ({ sources: { gmail: false, calendar: false }, configured: false }), async clear(source) { if (source === 'gmail') await clearDeferredMemory(); }, async sync() {}, async syncAll() {}, async configure() {} };
   if (!profile || memoryFactory) try {
     if (profile) {
       memoryConnection = await memoryFactory({ profileId: profile.id, profileDataDir: dataDir, configDir: profile.configDir, calendar, gmail, getChat, clearChat, assertIdle, now, logger,resources });

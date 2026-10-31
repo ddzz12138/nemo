@@ -2,6 +2,13 @@
 
 These entries track the public website. An installable Nemo app has not been released.
 
+## [0.0.6.2] - 2026-10-31
+
+### Changed
+
+- State on Home and How it works that the first public app requires a ChatGPT subscription and includes no local AI models.
+- Clarify the deferred Memory vision and ChatGPT data flow in About and Privacy.
+
 ## [0.0.6.1] - 2026-10-29
 
 ### Changed
