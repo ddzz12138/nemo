@@ -2,6 +2,15 @@
 
 These entries track the public website. An installable Nemo app has not been released.
 
+## [0.0.7.0] - 2026-11-01
+
+### Changed
+
+- Make school actions easier to scan with separate Friday and Monday deadline badges.
+- Show the Saturday outing result before the supporting calendar, retaining the picnic illustration.
+- Give the homework guidance a clear reply panel and emphasised question.
+- Use consistent warm peach and cream surfaces across the homepage examples, with readable orange message bubbles and mobile layouts.
+
 ## [0.0.6.2] - 2026-10-31
 
 ### Changed

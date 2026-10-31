@@ -16,9 +16,9 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Nemo. A personal AI. For everyone at home.">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="assets/nemo-icon.svg?v=0.0.6.2" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=0.0.6.2">
-  <script src="app.js?v=0.0.6.2" defer></script>
+  <link rel="icon" href="assets/nemo-icon.svg?v=0.0.7.0" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=0.0.7.0">
+  <script src="app.js?v=0.0.7.0" defer></script>
 </head>
 <body data-page="home">
 <a class="skip-link" href="#main">Skip to content</a>
@@ -32,7 +32,7 @@
   <span class="status-connectivity"><svg class="status-signal" viewBox="0 0 24 18"><rect x="0" y="12" width="4" height="6" rx="1.8"/><rect x="6.5" y="8" width="4" height="10" rx="1.8" fill="#bfc0c2"/><rect x="13" y="4" width="4" height="14" rx="1.8" fill="#bfc0c2"/><rect x="19.5" width="4" height="18" rx="1.8" fill="#bfc0c2"/></svg><svg class="status-wifi" viewBox="0 0 24 20"><path d="M2 6.6q10-8 20 0M6 11q6-4.8 12 0M10 15.3q2-1.8 4 0"/><circle cx="12" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg><span class="status-battery">100</span></span>
 </div>
     <div class="app-topbar" aria-hidden="true"><svg class="app-menu" viewBox="0 0 20 20"><path d="M3 7h14M3 13h9"/></svg><span class="app-brand">nemo</span><span class="app-nav"><span class="current-person">Dan</span></span></div>
-    <div class="dialogue" aria-hidden="true"><p class="prompt" id="prompt">School update?</p><div class="action-bubble" id="action-bubble"><span class="action-label" id="action-label">Checking school emails</span></div><div class="reply" id="reply"><div class="reply-content"><p class="reply-text" id="answer">Two things from school:</p><ul class="checklist"><li id="item-one">Return the trip form <strong>by Friday.</strong></li><li id="item-two">Pack the PE kit <strong>for Monday.</strong></li></ul><p class="memory-note" id="remembered">Just the actions. The way you like it.</p></div></div></div>
+    <div class="dialogue" aria-hidden="true"><p class="prompt" id="prompt">School update?</p><div class="action-bubble" id="action-bubble"><span class="action-label" id="action-label">Checking school emails</span></div><div class="reply" id="reply"><div class="reply-content"><p class="reply-text" id="answer">Two things from school:</p><ul class="checklist"><li id="item-one"><span>Return the trip form</span><strong>Friday</strong></li><li id="item-two"><span>Pack the PE kit</span><strong>Monday</strong></li></ul><p class="memory-note" id="remembered">Just the actions.<br>The way you like it.</p></div></div></div>
     <div class="app-composer" aria-hidden="true"><span class="composer-add"><svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></svg></span><span class="composer-input"><span class="composer-placeholder">Message Nemo</span><svg class="composer-audio" viewBox="0 0 24 24"><path d="M3 10v4m4-7v10m5-14v18m5-14v10m4-7v4"/></svg></span></div>
   <div class="phone-home" aria-hidden="true"></div></div></div></div><figcaption class="scene-caption">Illustrative sequence. Gmail is optional; automatic Memory is deferred from v1.</figcaption><p class="sr-only" id="hero-transcript">Dan asks: School update? Nemo checks school emails, finds deadlines, then prepares a reply. The complete message arrives together: Two things from school: return the trip form by Friday; pack the PE kit for Monday. Just the actions, the way you like it. This is an illustrative sequence.</p></figure>
 </section>
@@ -42,7 +42,9 @@
     <div class="vision-grid">
       <figure class="feature-scene outing-figure"><div class="feature-copy">
         <div class="figure-top"><span class="eyebrow"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h3m3 0h3"/></svg> A day out, together</span><span class="feature-status">Future vision</span></div>
-        <h2>“Plan a family outing.”</h2></div><div class="outing-canvas"><div class="calendar-title"><strong>Saturday</strong><span>Three shared calendars</span></div>
+        <h2>“Plan a family outing.”</h2></div><div class="outing-canvas"><div class="calendar-sheet">
+        <div class="outing-result"><span class="result-check"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span><div><strong><span class="outing-day">Saturday, </span>11–1.</strong><span>Everyone’s free. Picnic at the park?</span></div><svg class="picnic-art" viewBox="0 0 100 65" aria-hidden="true"><circle cx="75" cy="14" r="9"/><path d="M4 56c16-15 30-13 45-6 16-15 31-13 47 0M18 42h42l-5 19H23l-5-19ZM28 42c0-22 23-22 23 0M18 47h42M31 48v11m10-11v11m9-11v11"/></svg></div>
+        <div class="calendar-title"><strong>Saturday</strong><span>Three shared calendars</span></div>
         <table class="availability-table" aria-label="Illustrative shared calendar availability on Saturday">
           <thead><tr><td></td><th scope="col">10–11</th><th scope="col" class="selected-time">11–12</th><th scope="col" class="selected-time">12–1</th><th scope="col">1–2</th></tr></thead>
           <tbody>
@@ -52,13 +54,13 @@
           </tbody>
         </table>
         <div class="calendar-legend"><span><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg> Free</span><span><i class="busy-key" aria-hidden="true"></i> Busy</span></div>
-        <div class="outing-result"><span class="result-check"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span><div><strong>Saturday, 11–1.</strong><span>Everyone’s free. Picnic at the park?</span></div><svg class="picnic-art" viewBox="0 0 100 65" aria-hidden="true"><circle cx="75" cy="14" r="9"/><path d="M4 56c16-15 30-13 45-6 16-15 31-13 47 0M18 42h42l-5 19H23l-5-19ZM28 42c0-22 23-22 23 0M18 47h42M31 48v11m10-11v11m9-11v11"/></svg></div></div><figcaption>Family planning is a future feature. Each person chooses what to share.</figcaption></figure>
+        </div></div><figcaption>Family planning is a future feature. Each person chooses what to share.</figcaption></figure>
 
       <figure class="feature-scene child-figure"><div class="feature-copy">
         <div class="figure-top"><span class="eyebrow"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4 5 5M4 20l5-1L21 7a2.1 2.1 0 0 0-4-4L5 15l-1 5Z"/></svg> Child mode</span><span class="mode-label">Guided learning</span></div>
         <h2>Hints that help<br>them learn.</h2></div><div class="child-canvas"><div class="homework-slip" aria-hidden="true"><span>LET’S WORK IT OUT</span><div><span class="fraction"><b>3</b><b>4</b></span><span>+</span><span class="fraction"><b>1</b><b>8</b></span><span>= ?</span></div><i></i><i></i></div>
         <p class="request-bubble">“Do my homework for me.”</p>
-        <div class="nemo-reply"><span class="nemo-mark " aria-hidden="true">n</span><p>Let’s work it out together.<br>What have you tried?</p></div>
+        <div class="nemo-reply"><span class="reply-brand" aria-hidden="true">nemo</span><p>Let’s work it out together.<strong>What have you tried?</strong></p></div>
         <ol class="learning-path"><li>A hint</li><li>Their thinking</li><li>Understanding</li></ol></div><figcaption>Parent-set tools. Visible parent review. <a href="terms.html#families">Child access is not open in the current preview.</a></figcaption></figure>
     </div>
     <div class="principle-strip"><span><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.6 7.4L22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6L12 2Z"/></svg> Open source</span><span><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></svg> Personal to each of you</span><span><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11H3V10Z"/><path d="M9 21v-8h6v8"/></svg> Hosted at home</span></div>

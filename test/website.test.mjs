@@ -81,8 +81,8 @@ test('the complete accessible hero is delivered in HTML, before enhancement', ()
   assert.ok(figure.includes('id="hero-transcript"'));
   assert.ok(figure.includes('Dan asks: School update?'));
   assert.ok(figure.includes('class="reply" id="reply"'));
-  assert.ok(figure.includes('Return the trip form <strong>by Friday.</strong>'));
-  assert.ok(figure.includes('Pack the PE kit <strong>for Monday.</strong>'));
+  assert.ok(figure.includes('<span>Return the trip form</span><strong>Friday</strong>'));
+  assert.ok(figure.includes('<span>Pack the PE kit</span><strong>Monday</strong>'));
   assert.ok(!figure.includes('reply-shell-hidden'));
   assert.ok(!/<(?:input|textarea|button|form)\b/.test(figure), 'phone controls stay inert');
   assert.ok(!/hero-controls|id="(?:finish|replay)"|aria-live/.test(home), 'decorative looping needs no manual controls or repeated live announcements');
