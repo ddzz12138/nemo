@@ -80,5 +80,7 @@ offsite relay acceptance remain separate checks.
 - Acquire exact public Python and wheel artifacts with checked hashes and sizes,
   then reuse the existing sealed-runtime and relocation verification.
 - Require actual native, browser, runtime and MCP execution in candidate tests.
+- Keep the sealed runtime unchanged across native chat/history by disabling the
+  unused background toolchain probe and suppressing descendant Python caches.
 - Add scoped signing and immutable unpublished-draft delivery. A trusted signing
   identity, actual clean-PC installation/update and adult acceptance remain required.

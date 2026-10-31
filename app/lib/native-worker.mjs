@@ -27,10 +27,12 @@ export async function startNativeChatWorker({ dataDir, profile, pythonPath, sour
   }
   const workspace = join(home, 'workspace'), temporary = join(home, 'scratch'); await mkdir(workspace, { recursive: true }); await mkdir(temporary, { recursive: true });
   await writeJson(join(home, 'nemo-managed.json'), marker);
-  await writeJson(join(home, 'config.yaml'), { model: { default: model, provider: 'custom', base_url: brokerUrl, api_key: brokerGrant, api_mode: apiMode }, agent: { max_turns: 64 }, dashboard: { turn_isolation: false }, auxiliary: { title_generation: { enabled: false } }, terminal: { cwd: workspace }, mcp_servers: {}, telemetry: { enabled: false },...(connectionTools.length?{nemo_read_tools:connectionTools}:{}),...(interactions?{nemo_interactions:true}:{}) });
+  // Chat-only workers need no shell/toolchain hints. Their background probe
+  // would launch PATH Python/pip against the sealed bundle's dependency path.
+  await writeJson(join(home, 'config.yaml'), { model: { default: model, provider: 'custom', base_url: brokerUrl, api_key: brokerGrant, api_mode: apiMode }, agent: { max_turns: 64, environment_probe: false }, dashboard: { turn_isolation: false }, auxiliary: { title_generation: { enabled: false } }, terminal: { cwd: workspace }, mcp_servers: {}, telemetry: { enabled: false },...(connectionTools.length?{nemo_read_tools:connectionTools}:{}),...(interactions?{nemo_interactions:true}:{}) });
   const env = {};
   for (const [key, value] of Object.entries(environment)) if (['PATH', 'PATHEXT', 'SYSTEMROOT', 'WINDIR', 'SYSTEMDRIVE', 'COMSPEC', 'LANG', 'LC_ALL'].includes(key.toUpperCase())) env[key] = value;
-  Object.assign(env, { HOME: home, USERPROFILE: home, APPDATA: join(home, 'appdata'), LOCALAPPDATA: join(home, 'localappdata'), XDG_CACHE_HOME: join(home, 'cache'), HERMES_HOME: home, TMP: temporary, TEMP: temporary, TMPDIR: temporary, NEMO_NATIVE_PROFILE: profile.id, NEMO_CHILD_POLICY: profile.childMode === true ? 'child-v1' : 'standard-v1', HERMES_IGNORE_RULES: '1', PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8', NO_COLOR: '1', NO_PROXY: '127.0.0.1' });
+  Object.assign(env, { HOME: home, USERPROFILE: home, APPDATA: join(home, 'appdata'), LOCALAPPDATA: join(home, 'localappdata'), XDG_CACHE_HOME: join(home, 'cache'), HERMES_HOME: home, TMP: temporary, TEMP: temporary, TMPDIR: temporary, NEMO_NATIVE_PROFILE: profile.id, NEMO_CHILD_POLICY: profile.childMode === true ? 'child-v1' : 'standard-v1', HERMES_IGNORE_RULES: '1', PYTHONDONTWRITEBYTECODE: '1', PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8', NO_COLOR: '1', NO_PROXY: '127.0.0.1' });
   const helper = fileURLToPath(new URL('./native_worker.py', import.meta.url));
   env.HERMES_DISABLE_LAZY_INSTALLS = '1';
   const bootstrap = `import sys, runpy; sys.path.insert(0, ${JSON.stringify(sourceRoot)}); import hermes_bootstrap; runpy.run_path(${JSON.stringify(helper)}, run_name='__main__')`;
