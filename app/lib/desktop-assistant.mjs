@@ -14,11 +14,15 @@ export async function readAssistantSelection(dataDir) {
  * into ChatGPT before even opening protected account storage. */
 export async function createDesktopAssistant({ dataDir, onConnectionChanging = async () => {}, onConnected = async () => {}, cloudFactory = createAssistantOnboarding, ...options } = {}) {
   let approved = (await readAssistantSelection(dataDir))?.provider !== 'local';
-  let cloud, closed = false, chain = Promise.resolve();
+  let cloud, cloudLoading, closed = false, chain = Promise.resolve();
   const serialize = work => { const next = chain.catch(() => {}).then(work); chain = next.then(() => {}, () => {}); return next; };
   async function getCloud() {
-    if (!cloud) cloud = await cloudFactory({ dataDir, onConnectionChanging, onConnected, ...options });
-    return cloud;
+    if (cloud) return cloud;
+    // Saved-chat clients remain online during sign-in. Concurrent requests must
+    // share one protected account store and token-refresh lifecycle.
+    cloudLoading ||= Promise.resolve().then(() => cloudFactory({ dataDir, onConnectionChanging, onConnected, ...options }))
+      .then(value => { cloud = value; return value; }).finally(() => { cloudLoading = null; });
+    return cloudLoading;
   }
   function status() {
     return cloud?.status() || { provider: 'chatgpt', connected: false, phase: 'disconnected', planUsageEnabled: false,
@@ -36,7 +40,9 @@ export async function createDesktopAssistant({ dataDir, onConnectionChanging = a
       if (provider !== undefined && provider !== 'chatgpt') throw new Error('This version of Nemo requires a ChatGPT subscription. Local models are not supported.');
       if (!approved) {
         if (provider !== 'chatgpt') throw new Error('Choose Continue with ChatGPT before connecting.');
-        await onConnectionChanging();
+        // The running public server is already pinned to ChatGPT and cannot
+        // access credentials while unapproved. Keep saved chats available while
+        // OAuth is pending; onboarding pauses the app only at account commit.
         await writeJson(join(dataDir, 'assistant-mode.json'), { version: 1, provider: 'chatgpt' });
         approved = true;
       }
@@ -48,6 +54,6 @@ export async function createDesktopAssistant({ dataDir, onConnectionChanging = a
       if (!approved) throw new Error('Choose Continue with ChatGPT before connecting.');
       return (await getCloud()).retryConnection();
     }); },
-    async close() { closed = true; await chain; await cloud?.close(); },
+    async close() { closed = true; await chain; await cloudLoading?.catch(() => {}); await cloud?.close(); },
   };
 }

@@ -4,6 +4,7 @@
 
 - Make public desktop setup and the CLI server use only the ChatGPT subscription broker, with no local-model selection or alternate-provider preview.
 - Preserve saved ChatGPT sign-in and history. Require explicit ChatGPT opt-in after an experimental local selection; never silently activate a saved cloud grant.
+- Keep saved chats available while an upgrading local user connects ChatGPT, including denied, expired or failed browser sign-in.
 - Defer model-backed Memory and School notice from public entry points. Preserve experimental stores and block Gmail-copy removal/account changes when old Memory cleanup cannot be confirmed.
 - Update website and contributor instructions; verify subscription-only setup at 320, 768 and 1440 pixels, retained sessions, migration consent and disabled feature routes.
 

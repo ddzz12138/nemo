@@ -7,6 +7,7 @@ import { once } from 'node:events';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createDesktopAssistant } from '../lib/desktop-assistant.mjs';
+import { createAssistantOnboarding } from '../lib/assistant-onboarding.mjs';
 import { createNemoServer } from '../server.mjs';
 import { setupState, canOpenPersonalSpace } from '../public/desktop-setup.mjs';
 
@@ -41,11 +42,32 @@ test('a legacy local choice never opens saved cloud grants until explicit ChatGP
   assert.equal(assistant.status().provider, 'chatgpt'); assert.equal(assistant.status().connected, false);
   assert.equal(await assistant.credentials(), null); await assert.rejects(assistant.retryConnection(), /Choose Continue/);
   await assert.rejects(assistant.begin({ retry: true }), /Choose Continue/); assert.equal(cloudCalls, 0);
-  await assistant.begin({ provider: 'chatgpt' }); assert.equal(cloudCalls, 1); assert.equal(paused, 1);
+  await assistant.begin({ provider: 'chatgpt' }); assert.equal(cloudCalls, 1); assert.equal(paused, 0);
   assert.equal((await assistant.credentials()).provider, 'chatgpt');
   assert.deepEqual(JSON.parse(await readFile(join(dataDir, 'assistant-mode.json'))), { version: 1, provider: 'chatgpt' });
   assert.equal(await readFile(join(dataDir, 'assistant-provider.dpapi'), 'utf8'), grant);
   assert.equal(await readFile(join(dataDir, 'state.json'), 'utf8'), 'SYNTHETIC_HISTORY_UNCHANGED');
+});
+for (const outcome of ['browser-failure', 'denied', 'expired']) test(`legacy local upgrade keeps saved chats available when ChatGPT sign-in is ${outcome}`, async t => {
+  const dataDir = await directory(t); let paused = 0, opened, record;
+  await writeFile(join(dataDir, 'assistant-mode.json'), JSON.stringify({ version: 1, provider: 'local' }));
+  await writeFile(join(dataDir, 'state.json'), 'SYNTHETIC_SAVED_CHAT');
+  const assistant = await createDesktopAssistant({ dataDir, onConnectionChanging: async () => { paused++; },
+    cloudFactory: options => createAssistantOnboarding({ ...options, timeoutMs: outcome === 'expired' ? 40 : 10_000,
+      secretStore: { async load() { return record || null; }, async save(value) { record = structuredClone(value); } },
+      openExternal: async url => { opened = new URL(url); if (outcome === 'browser-failure') throw Error('Synthetic browser failure'); },
+      fetchImpl: async () => { throw Error('This test must not contact an AI provider'); } }) });
+  t.after(() => assistant.close());
+  if (outcome === 'browser-failure') await assert.rejects(assistant.begin({ provider: 'chatgpt' }), /could not open/);
+  else {
+    await assistant.begin({ provider: 'chatgpt' }); assert.equal(assistant.status().phase, 'waiting');
+    if (outcome === 'denied') {
+      const callback = new URL(opened.searchParams.get('redirect_uri')); callback.searchParams.set('state', opened.searchParams.get('state')); callback.searchParams.set('error', 'access_denied');
+      assert.equal((await fetch(callback)).status, 200); assert.equal(assistant.status().phase, 'permission-required');
+    } else { await new Promise(done => setTimeout(done, 100)); assert.equal(assistant.status().phase, 'expired'); }
+  }
+  assert.equal(paused, 0, 'Only committing a real account change may pause the saved-chat server');
+  assert.equal(await assistant.credentials(), null); assert.equal(await readFile(join(dataDir, 'state.json'), 'utf8'), 'SYNTHETIC_SAVED_CHAT');
 });
 test('existing ChatGPT selections resume across two launches without a new sign-in', async t => {
   const dataDir = await directory(t), f = cloudFixture();
@@ -55,6 +77,15 @@ test('existing ChatGPT selections resume across two launches without a new sign-
     assert.equal(assistant.status().connected, true); assert.equal((await assistant.credentials()).accessToken, 'synthetic-subscription-token'); await assistant.close();
   }
   assert.deepEqual(f.calls, []);
+});
+test('concurrent saved-chat clients share one account store during legacy ChatGPT opt-in', async t => {
+  const dataDir = await directory(t), f = cloudFixture(); let release, entered, calls = 0;
+  const pending = new Promise(done => { release = done; }), started = new Promise(done => { entered = done; });
+  await writeFile(join(dataDir, 'assistant-mode.json'), JSON.stringify({ version: 1, provider: 'local' }));
+  const assistant = await createDesktopAssistant({ dataDir, cloudFactory: async () => { calls++; entered(); await pending; return f.cloud; } });
+  t.after(() => assistant.close()); const connecting = assistant.begin({ provider: 'chatgpt' }); await started;
+  const clients = [assistant.credentials(), assistant.credentials()]; release();
+  await connecting; assert.ok((await Promise.all(clients)).every(value => value.provider === 'chatgpt')); assert.equal(calls, 1);
 });
 test('completed onboarding cannot make an old local provider ready in public setup', () => {
   const status = { setupCompleted: true, owner: { configured: true }, runtime: { ready: true, connected: true }, app: { ready: true, assistantConnected: true }, assistant: { provider: 'ollama', connected: true, phase: 'connected', localOnly: true } };
