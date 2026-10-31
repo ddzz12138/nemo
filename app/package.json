@@ -1,0 +1,83 @@
+{
+  "name": "nemo-local-agent",
+  "version": "0.3.0-alpha.16",
+  "private": true,
+  "type": "module",
+  "main": "desktop/main.cjs",
+  "author": "Nemo",
+  "description": "A desktop home for your family's AI assistant",
+  "license": "MIT",
+  "bin": {
+    "nemo": "bin/nemo.mjs"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "public/",
+    "desktop/",
+    "docs/",
+    "references/hermes-memory-LICENSE.txt",
+    "server.mjs",
+    "mcp-server.mjs",
+    "remote-service.mjs",
+    "LICENSE",
+    "README.md",
+    "QUICKSTART.md",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md",
+    "scripts/check-syntax.mjs",
+    "scripts/package-release.mjs",
+    "scripts/connect-gmail.mjs",
+    "scripts/setup-gmail-web.mjs",
+    "scripts/prepare-phone-assets.mjs",
+    "scripts/export-phone-app.mjs",
+    "deploy/phone-relay/coturn.conf.example"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "node scripts/check-syntax.mjs",
+    "package:release": "node scripts/package-release.mjs",
+    "doctor": "node bin/nemo.mjs doctor",
+    "setup": "node bin/nemo.mjs setup",
+    "check:portable": "node scripts/check-syntax.mjs",
+    "connect:gmail": "node scripts/connect-gmail.mjs",
+    "mcp": "node mcp-server.mjs",
+    "desktop": "electron-forge start",
+    "desktop:interface:build": "node desktop/interface/build.mjs",
+    "desktop:bootstrap": "node node_modules/electron/install.js",
+    "desktop:prepare": "node scripts/prepare-desktop-runtime.mjs",
+    "desktop:prepare:hermes": "node scripts/prepare-hermes-runtime.mjs",
+    "desktop:prepare:node": "node scripts/prepare-node-runtime.mjs",
+    "desktop:verify": "node scripts/verify-desktop-runtime.mjs",
+    "desktop:package": "electron-forge package",
+    "desktop:make": "npm run desktop:verify && node scripts/prepare-installer-tools.mjs && electron-forge make",
+    "remote:service": "node remote-service.mjs",
+    "host:setup": "node bin/nemo.mjs host-setup",
+    "phone:prepare": "node scripts/prepare-phone-assets.mjs",
+    "phone:check": "electron test/fixtures/phone-browser-check.cjs",
+    "phone:export": "node scripts/prepare-phone-assets.mjs && node scripts/export-phone-app.mjs",
+    "check:source": "node scripts/check-public-source.mjs"
+  },
+  "dependencies": {
+    "@simplewebauthn/browser": "14.0.0",
+    "@simplewebauthn/server": "14.0.3",
+    "@trystero-p2p/nostr": "0.26.0",
+    "electron-squirrel-startup": "1.0.1",
+    "htmlparser2": "10.0.0",
+    "qrcode": "1.5.4",
+    "werift": "0.25.2"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "8.0.1",
+    "@electron-forge/maker-squirrel": "8.0.1",
+    "@electron-forge/maker-zip": "8.0.1",
+    "electron": "45.0.0"
+  },
+  "config": {
+    "forge": "./forge.config.mjs"
+  }
+}

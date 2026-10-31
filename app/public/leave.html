@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#e6cdb9">
+    <title>Notify me when to leave — Nemo</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/leave.css">
+    <script src="/phone-app-config.js" defer></script><script src="/phone-link.js" defer></script><script src="/identity.js" defer></script><script src="/navigation.js" defer></script>
+    <script type="module" src="/leave.js"></script>
+  <link rel="stylesheet" href="/navigation.css"></head>
+  <body>
+    <div class="leave-shell">
+      <header class="leave-header">
+        <a href="/">Back to chat</a>
+        <span class="eyebrow">Sydney</span>
+      </header>
+      <h1>Notify me when to leave.</h1>
+      <p id="intro">Choose one event, confirm where you are leaving from and where you are going, then preview the trip before any alert is set.</p>
+      <p id="pushNote" role="status"></p>
+      <div id="status" class="leave-status" role="status"></div>
+      <section id="events" class="leave-card" aria-labelledby="eventsTitle"><h2 id="eventsTitle">Events</h2><div id="eventList"></div></section>
+      <section id="planner" class="leave-card" hidden aria-labelledby="plannerTitle">
+        <h2 id="plannerTitle">Trip</h2>
+        <div id="eventSummary"></div>
+        <div class="leave-field"><label for="destinationQuery">Destination</label><input id="destinationQuery" maxlength="80" placeholder="Station or place in NSW"></div>
+        <div id="destinationResults" class="leave-row"></div>
+        <p id="destinationChosen"></p>
+        <div class="leave-field"><label for="originQuery">Starting point</label><input id="originQuery" maxlength="80" placeholder="Search, or use your location"></div>
+        <div class="leave-actions"><button id="useLocation" type="button">Use my location now</button><button id="searchOrigin" type="button">Search starting point</button></div>
+        <div id="originResults" class="leave-row"></div>
+        <p id="originChosen"></p>
+        <div id="savedPlaces" class="leave-row"></div>
+        <div class="leave-row" role="group" aria-label="Travel mode">
+          <button id="modePublic" class="choice" type="button" aria-pressed="true">Public transport</button>
+          <button id="modeDriving" class="choice" type="button" aria-pressed="false">Driving</button>
+        </div>
+        <div class="leave-field"><label for="arriveAt">Time you need to be there</label><input id="arriveAt" type="datetime-local"></div>
+        <div class="leave-field"><label for="buffer">Arrive this many minutes early</label><input id="buffer" type="number" min="0" max="120" value="10"></div>
+        <div class="leave-field" id="driveField" hidden><label for="driveMinutes">Your driving estimate, in minutes</label><input id="driveMinutes" type="number" min="1" max="180" value="30"></div>
+        <p id="driveNote" hidden>A map link does not calculate a driving time. This reminder uses the minutes you enter.</p>
+        <div class="leave-field"><label for="detail">Lock screen</label><select id="detail"><option value="minimal">Show only “Time to leave”</option><option value="itinerary">Show the leave time and trip summary</option></select></div>
+        <div class="leave-actions"><button id="preview" class="primary" type="button">Preview trip</button><button id="enablePush" type="button">Enable notifications</button></div>
+      </section>
+      <section id="previewCard" class="leave-card mint" hidden aria-live="polite"></section>
+      <section id="reminders" class="leave-card" aria-labelledby="remindersTitle"><h2 id="remindersTitle">Reminders</h2><div id="reminderList"></div></section>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,25 @@
+.profile-page { max-width: 760px; margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) 20px 48px; }
+.profile-nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 36px; }
+.profile-nav a { color: var(--ink); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+.profile-page h1 { font-size: clamp(32px, 8vw, 48px); line-height: 1.1; font-weight: 400; letter-spacing: -.04em; margin: 16px 0; }
+.profile-page .intro { color: var(--secondary); line-height: 1.65; margin-bottom: 28px; }
+.profile-card { padding: 20px; border: 1px solid var(--line); border-radius: 20px; margin: 16px 0; background: var(--surface, #fff); }
+.profile-card h2, .profile-card h3 { font-weight: 500; margin: 0 0 12px; }
+.profile-card p { color: var(--secondary); line-height: 1.6; overflow-wrap: anywhere; }
+.profile-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.profile-actions > a { display: inline-flex; align-items: center; min-height: 44px; }
+.profile-actions button, .profile-page input { min-height: 44px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font: inherit; color: var(--ink); background: var(--background); }
+.profile-actions button { cursor: pointer; }
+.profile-page input { width: 100%; margin: 8px 0; box-sizing: border-box; }
+.child-mode-control { display: flex; align-items: center; gap: 12px; min-height: 44px; margin-top: 14px; line-height: 1.5; cursor: pointer; }
+.profile-page .child-mode-control input { width: 20px; min-height: 20px; height: 20px; flex: 0 0 20px; accent-color: var(--ink); }
+.profile-page button:disabled { opacity: .5; cursor: default; }
+.profile-page a { color: var(--ink); text-underline-offset: 3px; }
+.profile-page .profile-card > a { display: inline-flex; align-items: center; min-height: 44px; }
+.profile-page summary { cursor: pointer; min-height: 44px; display: list-item; align-content: center; }
+.profile-status { min-height: 24px; line-height: 1.5; color: var(--secondary); }
+.profile-status[data-error="true"] { color: var(--error); }
+.invite-code { display: block; font-size: clamp(20px, 5vw, 30px); letter-spacing: .07em; padding: 16px 0; color: var(--ink); overflow-wrap: anywhere; }
+.history-content { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.history-message { border-bottom: 1px solid var(--line); padding: 16px 0; }
+.history-message strong { display: block; margin-bottom: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--secondary); }

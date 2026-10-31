@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#e6cdb9">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/gmail-connect.css">
+  <script src="/phone-app-config.js" defer></script><script src="/phone-link.js" defer></script><script src="/identity.js" defer></script><script src="/navigation.js" defer></script>
+  <script src="/gmail-connect.js" type="module"></script>
+  <title>Connect Gmail — Nemo</title>
+<link rel="stylesheet" href="/navigation.css"></head>
+<body>
+  <main class="connection-sheet">
+    <a class="close" href="/" aria-label="Close Gmail connection">×</a>
+    <header>
+      <div class="connection-marks" aria-hidden="true">
+        <span class="app-mark nemo-mark">n</span>
+        <span class="joining-dots"><i></i><i></i><i></i></span>
+        <span class="app-mark"><svg viewBox="0 0 48 40" role="presentation"><path fill="#4285f4" d="M4 8h7v28H4a4 4 0 0 1-4-4V12z"/><path fill="#34a853" d="M37 8h7l4 4v20a4 4 0 0 1-4 4h-7z"/><path fill="#ea4335" d="m11 8 13 10L37 8v12L24 30 11 20z"/><path fill="#c5221f" d="M0 12V7a5 5 0 0 1 8-4l3 2v15z"/><path fill="#fbbc04" d="m37 5 3-2a5 5 0 0 1 8 4v5L37 20z"/></svg></span>
+      </div>
+      <p class="eyebrow">YOUR INBOX, CONNECTED</p>
+      <h1>Select a connection type</h1>
+      <p class="subtitle">Gmail for Nemo</p>
+    </header>
+
+    <p class="notice" id="status" role="status" aria-live="polite">Checking your connection…</p>
+    <section class="account" id="accountPanel" hidden>
+      <span class="connected-dot" aria-hidden="true"></span><div><strong>Gmail connected</strong><p id="account"></p></div>
+    </section>
+
+    <form id="connectionForm">
+      <fieldset id="choices" disabled>
+        <legend class="sr-only">How should Nemo connect to Gmail?</legend>
+        <label class="choice">
+          <svg class="choice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.5-1L20 9M4 15l2.4 3A7 7 0 0 0 18 17"/></svg>
+          <span class="choice-copy"><span class="choice-title">Sync <span class="badge">Faster reads</span></span><span class="choice-description">Keep up to 50 recent email snippets on your PC for faster answers.</span><span class="choice-detail">Past 7 days · refreshes every 15 minutes while Nemo runs</span></span>
+          <input type="radio" name="mode" value="sync" id="syncChoice" checked>
+        </label>
+        <label class="choice">
+          <svg class="choice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="5" r="3"/><circle cx="18" cy="12" r="3"/><circle cx="6" cy="19" r="3"/><path d="M6 8v8m2.6-9.5 6.8 4m-6.8 7 6.8-4"/></svg>
+          <span class="choice-copy"><span class="choice-title">Don’t sync</span><span class="choice-description">Search Gmail when you ask a question. Keep no synced email cache or mirrored email memories on this PC.</span><span class="choice-detail">May take a little longer · searches beyond the sync window</span></span>
+          <input type="radio" name="mode" value="demand" id="demandChoice">
+        </label>
+      </fieldset>
+      <p class="privacy">Read only. Nemo cannot send or delete emails. Connecting Gmail does not enable AI access: you control that separately in Connections. Retrieved snippets can reach Hermes’s cloud AI when enabled.</p>
+      <button class="continue" id="continueButton" disabled>Continue <span aria-hidden="true">↗</span></button>
+      <p class="footnote" id="continueHelp">Sign in securely with Google. Your password stays with Google.</p>
+    </form>
+
+    <section class="setup" id="setupPanel" hidden>
+      <h2>One setup step on your PC</h2>
+      <p>Phone sign-in needs a Google <strong>Web application</strong> OAuth client. A Desktop client works only for sign-in on the PC.</p>
+      <p>Register this exact return address in Google’s client settings:</p>
+      <code id="callbackAddress"></code>
+      <p>Download the client JSON, then run in the Nemo folder:</p>
+      <code>node scripts/setup-gmail-web.mjs --client "C:\path\web-client.json"</code>
+      <p>Your existing connection is preserved. If Google rejects the private domain, a supported registered callback domain must be configured before phone sign-in can work.</p>
+    </section>
+
+    <section class="stored" id="storedPanel" hidden>
+      <div class="section-heading"><h2>What’s stored on your PC</h2><span class="local-tag">Local cache</span></div>
+      <p id="syncSummary"></p>
+      <p class="privacy">Sender, subject, date and a short snippet only. No bodies or attachments. If Gmail mirroring is enabled in Memory, these snippets also have searchable local GBrain copies. The snippet cache is protected for your Windows user. GBrain memory text and vectors are kept in a separate local database. Clearing the cache also removes its mirrored email memories and leaves your original Gmail messages unchanged.</p>
+      <div class="secondary-actions"><button id="syncNow" type="button">Sync now</button><button id="viewCache" type="button">View saved snippets</button><button id="clearCache" type="button">Clear cache &amp; stop sync</button></div>
+      <p class="privacy">Earlier chat answers, backups and copies already sent to the AI are outside this cache deletion.</p>
+      <div id="cacheList" class="cache-list" hidden></div>
+    </section>
+    <section class="manage" id="managePanel" hidden>
+      <button id="switchAccount" type="button">Connect another Google account</button>
+      <button id="disconnect" type="button">Disconnect Gmail</button>
+      <p>Gmail is shared by trusted devices paired with this PC. Disconnecting removes its local tokens and synced snippets for all of them.</p>
+    </section>
+    <a class="back-link" id="pairLink" href="/" hidden>Open Nemo to pair this browser →</a>
+  </main>
+</body>
+</html>
