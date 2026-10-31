@@ -1,9 +1,10 @@
 import { run } from 'node:test';
-import { readdir, mkdir, writeFile, access } from 'node:fs/promises';
+import { readdir, mkdir, writeFile, readFile, access } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { APP_ROOT } from '../lib/config.mjs';
 import { verifyPreparedNodeRuntime } from './prepare-node-runtime.mjs';
+import { verifyHermesBundle } from '../lib/hermes-bundle.mjs';
 
 const require = createRequire(import.meta.url);
 await access(require('electron'));
@@ -12,6 +13,8 @@ const runtime = join(APP_ROOT,'.work/desktop-runtime');
 const python = join(runtime,'hermes/python/python.exe'), source = join(runtime,'hermes/source');
 await access(python); await access(join(source,'tools/mcp_tool_discovery.py'));
 await verifyPreparedNodeRuntime(runtime);
+const runtimeManifest=JSON.parse(await readFile(join(runtime,'manifest.json'),'utf8'));
+await verifyHermesBundle({root:runtime,manifest:runtimeManifest.hermes});
 Object.assign(process.env,{NEMO_TEST_PYTHON:python,NEMO_TEST_HERMES_ROOT:source,NEMO_TEST_NATIVE_PYTHON:python,NEMO_TEST_NATIVE_SOURCE:source});
 const files=(await readdir(join(APP_ROOT,'test'))).filter(x=>x.endsWith('.test.mjs')).map(x=>join(APP_ROOT,'test',x));
 const passed=new Set(),skipped=[],failed=[];
@@ -21,6 +24,8 @@ for await(const event of run({files,concurrency:2})) {
   }
   if(event.type==='test:fail'){failed.push(event.data.name);console.error(event.data.name+': '+String(event.data.details?.error?.message||'failed').slice(0,1500));}
 }
+try { await verifyHermesBundle({root:runtime,manifest:runtimeManifest.hermes}); }
+catch(error) { failed.push('sealed runtime remains unchanged after the complete suite'); console.error(error.message); }
 const mandatory=[
   'real Electron cold restarts restore owner/member chat and saved history; sign-out, revocation and fresh installs stay gated',
   'a Windows version-folder upgrade retains sign-in, chat and protected accounts; expired sign-in never repeats account setup',
