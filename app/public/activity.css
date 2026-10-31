@@ -1,0 +1,12 @@
+.activity-log{max-width:100%;margin:12px 0 4px;font-size:12px;line-height:1.6;color:var(--secondary,#62665e);overflow-wrap:anywhere}
+.activity-log summary{cursor:pointer;min-height:44px;display:list-item;align-content:center;width:fit-content;max-width:100%;padding:5px 12px;border-radius:16px;background:var(--surface-subtle,#efefe9);color:var(--text,#20211d)}
+.activity-log[data-pending="true"] summary{background:var(--mint,#deeee1)}
+.activity-log[data-attention="true"] summary{background:var(--sand,#f8e7be)}
+.activity-log summary:focus-visible{outline:2px solid var(--focus,#315b46);outline-offset:3px}
+.activity-log ol{list-style:none;padding:8px 8px 0;margin:0;display:grid;gap:7px}
+.activity-log li{display:flex;align-items:baseline;gap:9px;min-width:0}
+.activity-symbol{width:12px;flex-shrink:0;color:var(--focus,#315b46)}
+.activity-label{flex:1;min-width:0}.activity-duration{font-variant-numeric:tabular-nums;font-size:11px}
+.activity-log li[data-state="running"] .activity-symbol{animation:breathe 1.7s ease-in-out infinite}
+.activity-log li[data-state="failed"] .activity-symbol,.activity-log li[data-state="partial"] .activity-symbol,.activity-log li[data-state="interrupted"] .activity-symbol{color:#805321}
+@media(prefers-reduced-motion:reduce){.activity-log li[data-state="running"] .activity-symbol{animation:none}}

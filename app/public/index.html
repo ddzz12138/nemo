@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#e6cdb9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Nemo">
+    <meta name="description" content="A personal window to your agent, running on your PC.">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/activity.css">
+    <script src="/phone-app-config.js" defer></script><script src="/phone-link.js" defer></script><script src="/identity.js" defer></script><script src="/navigation.js" defer></script>
+    <script src="/integrations.js" defer></script>
+    <script src="/chat-viewport.js" defer></script>
+    <script src="/activity.js" defer></script>
+    <script src="/app.js" defer></script>
+    <title>Nemo — Your personal agent</title>
+  <link rel="stylesheet" href="/navigation.css"></head>
+  <body class="chat-page">
+    <div class="app-shell">
+      <header data-nemo-header></header>
+      <div hidden>
+        <button id="integrationsButton" type="button" aria-haspopup="dialog" disabled>Connected accounts</button>
+        <button class="connection-button" id="connectionButton" type="button" aria-label="Connection settings" aria-haspopup="dialog">
+          <span class="status-dot" id="connectionDot" aria-hidden="true"></span>
+          <span id="connectionLabel">Connecting</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--background)"/><circle cx="15" cy="17" r="3" fill="var(--background)"/></svg>
+        </button>
+      </div>
+
+      <main class="conversation" id="conversation" aria-label="Conversation">
+        <section class="welcome" id="welcome" aria-labelledby="welcomeTitle">
+          <h1 id="welcomeTitle">What’s on your mind?</h1>
+          <p>A question, a plan, a little help with your day.</p>
+        </section>
+        <div class="message-list" id="messages" aria-label="Messages"></div>
+        <div class="run-status" id="runStatus" role="status" aria-live="polite" hidden>
+          <span class="working-mark" aria-hidden="true"></span>
+          <span id="runStatusText"></span>
+        </div>
+        <div class="conversation-end" id="conversationEnd" aria-hidden="true"></div>
+      </main>
+
+      <div class="composer-region">
+        <button class="latest-button" id="latestButton" type="button" hidden>Jump to latest <span aria-hidden="true">↓</span></button>
+        <div class="notice" id="notice" role="status" hidden>
+          <p id="noticeText"></p>
+          <button id="noticeAction" type="button" hidden>Try again</button>
+        </div>
+        <form class="composer" id="chatForm" aria-label="Send a message">
+          <label class="sr-only" for="messageInput">Message your agent</label>
+          <textarea id="messageInput" rows="1" placeholder="What’s on your mind?" maxlength="8000" enterkeyhint="enter" disabled></textarea>
+          <div class="composer-tools">
+            <span class="composer-context"><span class="context-symbol" aria-hidden="true">✳</span><span id="composerContext">Your personal agent</span></span>
+            <button class="send-button" id="sendButton" type="submit" disabled><span>Send</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button>
+          </div>
+        </form>
+        <p class="composer-caption" id="composerCaption">Connecting to your PC…</p>
+      </div>
+    </div>
+
+    <dialog class="connection-dialog" id="connectionDialog" aria-labelledby="dialogTitle" aria-describedby="dialogDescription">
+      <div class="dialog-topline"><span class="eyebrow">Your space, connected</span><button class="icon-button" id="closeDialog" type="button" aria-label="Close connection settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <h2 id="dialogTitle" tabindex="-1">Connect to<br>your agent.</h2>
+      <p class="dialog-description" id="dialogDescription">Enter your personal invitation code to connect this device to your profile.</p>
+      <form id="pairForm">
+        <p><a href="/sign-in.html">Already have a passkey? Sign in ↗</a></p>
+        <label for="pairCode">Pairing code</label>
+        <input id="pairCode" name="code" type="text" autocomplete="one-time-code" autocapitalize="none" spellcheck="false" placeholder="Code from your PC" required>
+        <label for="deviceName">Device name</label><input id="deviceName" name="deviceName" type="text" maxlength="60" autocomplete="off" placeholder="My iPhone">
+        <p class="field-help">Your one-time invitation expires in 24 hours. This device stays signed in for 90 days.</p>
+        <button class="primary-button" id="pairButton" type="submit">Connect to my agent <span aria-hidden="true">↗</span></button>
+      </form>
+      <div class="paired-details" id="pairedDetails" hidden>
+        <div class="detail-row"><span>Profile</span><strong data-profile-name></strong></div>
+        <div class="detail-row" data-child-mode hidden><span>Child mode</span><strong>Hints and learning help</strong></div>
+        <a class="secondary-button settings-connections" href="/family.html">Profile, family &amp; devices ↗</a>
+        <div class="detail-row"><span>Agent</span><strong>Hermes</strong></div>
+        <div class="detail-row"><span>Runs on</span><strong>Your PC</strong></div>
+        <div class="detail-row"><span>Status</span><strong id="dialogConnectionStatus">Connected</strong></div>
+        <p class="chatgpt-plan" id="chatgptPlan" hidden><span id="chatgptPlanLabel">Using ChatGPT plan</span><a href="https://chatgpt.com/settings/usage" target="_blank" rel="noopener noreferrer">Manage usage ↗</a></p>
+        <div class="detail-row" id="modelRow" hidden><span>Model</span><strong id="modelValue"></strong></div>
+        <details class="connection-details"><summary>Connection details</summary><p id="serverAddress"></p><p>Your profile is stored on your computer. Your chosen AI provider handles replies.</p></details>
+        <button class="secondary-button" id="refreshConnection" type="button">Check connection <span aria-hidden="true">↻</span></button>
+        <button class="secondary-button settings-connections" id="settingsIntegrationsButton" type="button">Connected accounts <span aria-hidden="true">↗</span></button>
+        <button class="disconnect-button" id="logoutButton" type="button">Unpair this device</button>
+      </div>
+      <p class="dialog-message" id="dialogMessage" role="status" hidden></p>
+    </dialog>
+
+    <dialog class="connection-dialog integrations-dialog" id="integrationsDialog" aria-labelledby="integrationsTitle" aria-describedby="integrationsDescription">
+      <div class="dialog-topline"><span class="eyebrow">Your world, in reach</span><button class="icon-button" id="closeIntegrations" type="button" aria-label="Close connections"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <h2 id="integrationsTitle" tabindex="-1">Connected accounts</h2>
+      <p class="dialog-description" id="integrationsDescription">Bring your private calendar, inbox, and Memory into the conversation.</p>
+      <div class="integration-privacy">
+        <span class="eyebrow">You choose what’s shared</span>
+        <p>When enabled, Nemo may read your calendar, search your Gmail snippets, and retrieve your saved Memory. Results go through the configured Hermes cloud AI. These read-only tools cannot send mail, edit events, or change Memory.</p>
+        <p>Calendar answers use your latest successful phone sync. Connections and chat history belong to your profile and are available on your own paired devices.</p>
+        <p id="consentRenewal" hidden>Review this profile’s permission before sharing connected data with the AI.</p>
+        <label class="context-checkbox"><input id="dialogUseIntegrations" type="checkbox" aria-describedby="dialogConsentDescription" disabled><span>Allow Nemo to use connected tools</span></label>
+        <p class="consent-help" id="dialogConsentDescription">Off by default. When on, Nemo uses your connected tools when relevant without asking again in chat. This choice is saved for your profile until you switch it off here. Calendar/Gmail copying into Memory is a separate choice on the Memory screen, and runs locally. Syncing alone does not enable AI access. Switching this off stops new tool access but does not erase information already sent.</p>
+      </div>
+      <div class="integrations-refresh"><p id="integrationsUpdated" role="status">Checking connections…</p><button class="text-button" id="refreshIntegrations" type="button">Refresh status <span aria-hidden="true">↻</span></button></div>
+      <p class="dialog-message integrations-message" id="integrationsMessage" role="status" hidden></p>
+
+      <section class="integration-card calendar-card" aria-labelledby="calendarTitle">
+        <div class="integration-card-header"><span class="integration-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 11h16m-11 4h.01M13 15h.01M17 15h.01"/></svg></span><span class="integration-tag">Read only</span></div>
+        <h3 id="calendarTitle">Your calendar.</h3>
+        <p class="integration-status" id="calendarStatus">Checking connection…</p>
+        <p class="integration-detail" id="calendarLastSync">Last sync: not checked</p>
+        <p class="integration-detail" id="calendarWindow" hidden></p>
+        <p class="integration-detail" id="calendarNextStep">Set up an iPhone shortcut to sync the next seven days.</p>
+        <div class="integration-actions"><a class="outlined-button" href="/calendar-setup.html" target="_blank" rel="noopener">Setup guide <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a><a class="outlined-button" id="runCalendarShortcut" href="shortcuts://run-shortcut?name=Nemo%20Sync%20Calendar" hidden>Sync Calendar <span aria-hidden="true">↗</span></a></div>
+        <p class="integration-detail shortcut-help" id="calendarShortcutHelp" hidden>Sync Calendar opens the shortcut you created. Complete the setup guide first.</p>
+        <button class="text-button create-token" id="createCalendarToken" type="button" disabled>Create sync token <span aria-hidden="true">↗</span></button>
+        <p class="integration-detail" id="calendarRotationNote" hidden>Replacing the token stops your existing shortcut until you update it.</p>
+        <div class="calendar-token-panel" id="calendarTokenPanel" hidden>
+          <label for="calendarTokenValue">New sync token · shown once</label>
+          <textarea id="calendarTokenValue" readonly rows="2" autocomplete="off" autocapitalize="none" spellcheck="false"></textarea>
+          <button class="outlined-button" id="copyCalendarToken" type="button">Copy token</button>
+          <label for="calendarEndpoint">Sync endpoint</label>
+          <input id="calendarEndpoint" type="text" readonly autocomplete="off" spellcheck="false">
+          <button class="outlined-button" id="copyCalendarEndpoint" type="button">Copy endpoint</button>
+          <p class="integration-detail">Keep this token private. Put it in the shortcut’s <code>Authorization: Bearer &lt;token&gt;</code> header, never in the URL. It disappears from this window when you close Connections.</p>
+        </div>
+        <button class="text-button integration-disconnect" id="disconnectCalendar" type="button" hidden>Disconnect calendar</button>
+      </section>
+
+      <section class="integration-card gmail-card" aria-labelledby="gmailTitle">
+        <div class="integration-card-header"><span class="integration-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg></span><span class="integration-tag">Read only</span></div>
+        <h3 id="gmailTitle">Your inbox.</h3>
+        <p class="integration-status" id="gmailStatus">Checking connection…</p>
+        <p class="integration-detail" id="gmailAccount" hidden></p>
+        <a class="outlined-button gmail-connect-link" id="gmailConnectLink" href="/gmail-connect.html">Connect Gmail <span aria-hidden="true">↗</span></a>
+        <details class="gmail-setup" id="gmailSetup">
+          <summary>Set up Gmail on your PC</summary>
+          <p>Provide your Google OAuth client file and run this command in the Nemo project on your PC:</p>
+          <code class="setup-command" id="gmailCommand">node scripts/connect-gmail.mjs --client "C:\path\client.json"</code>
+          <button class="outlined-button" id="copyGmailCommand" type="button">Copy command</button>
+          <p>Replace <code>C:\path\client.json</code> with your file’s path. Complete Google’s sign-in on your PC, then refresh the status here.</p>
+        </details>
+        <button class="text-button integration-disconnect" id="disconnectGmail" type="button" hidden>Disconnect Gmail</button>
+      </section>
+    </dialog>
+    <div class="sr-only" id="announcer" role="status" aria-live="polite" aria-atomic="true"></div>
+    <noscript><p class="noscript">Nemo needs JavaScript to connect to your agent. Enable JavaScript and reload this page.</p></noscript>
+  </body>
+</html>

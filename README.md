@@ -4,7 +4,9 @@ A personal AI. For everyone at home. Nemo is an independent family experience bu
 
 **[Visit the Nemo website](https://ddzz12138.github.io/nemo/)**
 
-This repository contains the project announcement website in `docs/`, published through GitHub Pages. The app is in private family testing; public source, installation instructions, and downloads are being prepared for the first release.
+The maintained application source is in **[app/](app/README.md)**. It includes the desktop interface, server, tests, build instructions and licence notices. The first signed Windows installer and clean-PC installation pilot are being prepared; this source import does not publish a downloadable installer.
+
+The announcement website remains in `docs/`, published through GitHub Pages. Its files, URLs and deployment workflow are separate from the application.
 
 The website contains fictional product examples and has no connection to a family's private Nemo server. The `VERSION` and `CHANGELOG.md` currently track the website publication, not an installable app release.
 

@@ -1,0 +1,9 @@
+{
+  "name": "nemo-ollama-interface",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": { "react": "19.3.1", "react-dom": "19.3.1" },
+  "devDependencies": { "esbuild": "0.28.2" }
+}

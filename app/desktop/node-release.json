@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "platform": "win32",
+  "arch": "x64",
+  "nodeVersion": "24.13.1",
+  "file": "node/node.exe",
+  "url": "https://nodejs.org/dist/v24.13.1/win-x64/node.exe",
+  "sha256": "e3be0545990c90995d7bf3a7af5d64af1f2e0fc1bbd9b79c27f7abc1e9676e50",
+  "checksums": {
+    "url": "https://nodejs.org/dist/v24.13.1/SHASUMS256.txt",
+    "sha256": "496b662fcf38fca596f8d1dd2e95245ac1597dd49e0c3c60235b0b6f2c072900",
+    "entry": "win-x64/node.exe"
+  },
+  "license": {
+    "url": "https://raw.githubusercontent.com/nodejs/node/v24.13.1/LICENSE",
+    "file": "node/LICENSE.txt",
+    "sha256": "9ef8d3fa97d90d93543ee9e2b71394de59c09d8057625fd355d45303243527a3"
+  }
+}

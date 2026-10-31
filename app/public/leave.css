@@ -1,0 +1,19 @@
+.leave-shell { width: min(100%, 760px); margin: 0 auto; padding: env(safe-area-inset-top) 20px calc(env(safe-area-inset-bottom) + 28px); }
+.leave-header { display: flex; align-items: center; justify-content: space-between; min-height: 72px; gap: 12px; }
+.leave-header a, .leave-actions button, .leave-actions a { min-height: 44px; }
+.leave-header a { color: var(--secondary); font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; }
+.leave-shell h1 { margin: 8px 0 12px; font-size: clamp(36px, 10vw, 56px); font-weight: 560; letter-spacing: -.04em; line-height: .95; }
+.leave-shell p, .leave-card p { color: var(--secondary); line-height: 1.45; }
+.leave-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin: 12px 0; }
+.leave-card.mint { background: var(--mint); }
+.leave-card h2 { margin: 0 0 8px; font-size: 22px; }
+.leave-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.leave-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.leave-actions button, .leave-actions a, .choice { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 10px 14px; text-decoration: none; display: inline-flex; align-items: center; }
+.leave-actions .primary, button.primary { background: var(--ink); color: var(--background); border-color: var(--ink); }
+.leave-field { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.leave-field input, .leave-field select { min-height: 44px; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; background: var(--surface); color: var(--ink); }
+.leave-status { min-height: 1.4em; }
+.leave-status[data-kind="error"] { color: var(--error); }
+.leg { padding: 8px 0; border-top: 1px solid var(--line); }
+@media (max-width: 375px) { .leave-shell { padding-left: 16px; padding-right: 16px; } .leave-shell h1 { font-size: 34px; } }

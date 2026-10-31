@@ -1,0 +1,54 @@
+/* App colours match the public Nemo site's orange, peach and cream tokens. */
+:root { --background:#fffaf4; --surface:#fff2e6; --subtle:#f8dcc5; --ink:#20242a; --secondary:#56514b; --muted:#6d6259; --line:#dbc7b8; --focus:#bd4d20; --nemo-orange:#f88009; --nemo-reply:#fff0e4; --nemo-wash:radial-gradient(ellipse 110% 65% at 52% -28%,#e489483b,#f1b58614 65%,transparent),linear-gradient(180deg,#e6cdb9,#f0daca 24%,#faeade 53%,#fff5eb 82%,#fffaf4); }
+.nemo-page:not(.chat-page) { height:auto; min-height:100%; }
+.nemo-page { background-color:var(--background);background-image:var(--nemo-wash);background-repeat:no-repeat;background-size:100% max(1000px,100dvh);background-attachment:fixed;color:var(--ink);padding:0; }
+.nemo-header { display:grid;grid-template-columns:minmax(44px,1fr) auto minmax(44px,1fr);align-items:center;min-height:68px;gap:12px;width:min(100%,760px);margin:0 auto;padding:8px 12px;background:transparent;border-bottom:1px solid var(--line);flex:0 0 auto; }
+.nemo-wordmark { color:var(--ink);font-size:22px;font-weight:600;letter-spacing:-.6px;text-decoration:none;min-height:44px;display:flex;align-items:center; }
+.nemo-nav-button { display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;border:0;background:transparent;color:var(--secondary);font:inherit;border-radius:12px;padding:8px;cursor:pointer; }
+.nemo-menu-button { justify-self:start; }
+.nemo-menu-mark { display:block;width:16px;height:12px;background:linear-gradient(var(--secondary),var(--secondary)) left top/15px 1.5px no-repeat,linear-gradient(var(--secondary),var(--secondary)) left 6px/10px 1.5px no-repeat; }
+.nemo-profile-button { justify-self:end;max-width:100%;font-size:14px;min-width:44px; }
+.nemo-profile-button span { max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.nemo-panel { color:var(--ink);background:linear-gradient(180deg,#f7dfcb,#fff5eb);border:0;border-radius:24px;padding:24px;width:min(420px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow-y:auto;box-shadow:0 16px 70px #6c351b26; }
+.nemo-panel::backdrop { background:#20212644; }
+.nemo-drawer { position:fixed;inset:0 auto 0 0;margin:0;width:min(340px,calc(100% - 40px));max-height:100dvh;min-height:100dvh;border-radius:0 22px 22px 0;padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom)); }
+.nemo-panel-top { display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px; }
+.nemo-panel-top h2 { font-size:23px;letter-spacing:-.6px;font-weight:500;margin:0; }
+.nemo-panel-close { font-size:28px; }
+.nemo-primary-nav { display:grid;gap:5px; }
+.nemo-nav-link { display:flex;align-items:center;gap:10px;min-height:48px;width:100%;padding:11px 13px;border:0;border-radius:12px;background:transparent;color:var(--ink);font:inherit;text-align:left;text-decoration:none;cursor:pointer;overflow-wrap:anywhere; }
+.nemo-nav-link:hover,.nemo-nav-link[aria-current="page"] { background:var(--subtle); }
+.nemo-nav-link[aria-current="page"] { font-weight:500; }
+.nemo-nav-link:disabled { opacity:.5;cursor:default; }
+.nemo-nav-section { border-top:1px solid var(--line);padding-top:15px;margin-top:20px; }
+.nemo-nav-section h3 { margin:0 12px 8px;color:var(--secondary);font-size:12px;font-weight:500; }
+.nemo-profile-name { margin:12px;font-size:22px;overflow-wrap:anywhere; }
+.nemo-nav-note { margin:8px 12px;font-size:12px;line-height:1.6;color:var(--secondary); }
+.nemo-computer-row>span { display:block;margin:10px 12px 0;font-size:12px;color:var(--secondary); }
+.nemo-computer-row .connection-button { justify-content:flex-start; }
+.nemo-computer-row #connectionLabel { display:inline; }
+.nemo-page .profile-page { padding-top:20px; }
+.nemo-page .profile-nav { margin-bottom:18px; }
+.nemo-page .profile-nav>[data-profile-name],.nemo-page .profile-nav>span { display:none; }
+.nemo-page .profile-card { border-color:var(--line);border-radius:20px;background:var(--surface); }
+.nemo-page .profile-page h1 { font-size:32px;line-height:1.15;letter-spacing:-1px; }
+.nemo-page .memory-header { height:52px;justify-content:flex-end; }
+.nemo-page .memory-header>a,.nemo-page .memory-person { display:none; }
+.nemo-page .memory-main { padding-top:4px; }
+.nemo-page .memory-card { background:var(--subtle); }
+.nemo-page .memory-sheet { background:var(--background);border-color:var(--line); }
+.nemo-page .memory-main h1 { font-size:34px;line-height:1.12;letter-spacing:-1px; }
+.nemo-page .memory-intro { margin-bottom:32px; }
+.nemo-page .leave-header { min-height:48px; }
+.nemo-page .leave-header>.eyebrow { display:none; }
+.nemo-page .connection-sheet { padding-top:20px;background:var(--surface);border-color:var(--line); }
+.nemo-page .connection-sheet>.close { display:none; }
+.nemo-page .connection-sheet .choice { background:var(--background);border-color:var(--line); }
+.nemo-page .connection-sheet .choice:has(input:checked) { border-color:var(--nemo-orange); }
+.nemo-page .connection-dialog { background:var(--background);border-color:var(--line);border-radius:24px; }
+.nemo-page .connection-dialog h2 { font-size:30px;line-height:1.15;letter-spacing:-.9px; }
+.nemo-page .integration-card { border:1px solid var(--line);background:var(--surface); }
+.nemo-page .integration-card h3 { font-size:27px;letter-spacing:-.8px; }
+.nemo-page .activity-log summary { background:var(--surface); }
+.nemo-page .preview-message { border-radius:22px; }
+@media(max-width:380px) { .nemo-header{padding-left:10px;padding-right:10px}.nemo-profile-button{max-width:90px}.nemo-panel{padding:20px}.nemo-drawer{padding:20px 14px} }

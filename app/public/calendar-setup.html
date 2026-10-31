@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#e6cdb9"><title>Connect iPhone Calendar — Nemo</title>
+  <link rel="stylesheet" href="/setup.css">
+<script src="/phone-app-config.js" defer></script><script src="/phone-link.js" defer></script><script src="/identity.js" defer></script><script src="/navigation.js" defer></script><link rel="stylesheet" href="/navigation.css"></head>
+<body><main>
+  <a class="back" href="/">← Back to Nemo</a><p class="eyebrow">YOUR SPACE, CONNECTED</p>
+  <h1>Your week.<br>Within reach.</h1>
+  <p>Build an Apple Shortcut to upload a snapshot of selected calendar events for the next seven days to your PC.</p>
+  <aside>This is a manual setup guide, awaiting verification on your iPhone. Nemo cannot silently install a Shortcut or read your phone’s calendar from Safari. The steps use Apple’s documented Dictionary and JSON request features, but the exact nested-list editor and the complete upload have not been tested on your device. No installable Shortcut is included.</aside>
+
+  <h2>1. Create a token from your phone’s HTTPS address</h2>
+  <p>First finish phone access in Nemo on your computer. On your iPhone, open Nemo at its <strong>HTTPS</strong> address, pair the phone, then open <strong>menu → Connected accounts → Calendar → Create sync token</strong>. This supplies the phone endpoint directly. When you create a token on the PC, Nemo uses its saved private HTTPS address; if that address is not configured, it shows a setup notice instead of a loopback endpoint.</p>
+  <p>Copy the displayed endpoint and token into your private Shortcut. An endpoint ends in <code>/api/calendar/import</code>. Do not substitute <code>localhost</code> or <code>127.0.0.1</code>: on the iPhone those refer to the phone itself. Use <code>Authorization: Bearer YOUR_TOKEN</code> as the request header; never add it to the URL. The token expires after 30 days; replacing it revokes the previous token.</p>
+
+  <h2>2. Build “Nemo Sync Calendar”</h2>
+  <p>In Apple’s <strong>Shortcuts</strong> app, create a shortcut with that exact name. The names below describe the intended actions and values; controls can vary with iOS version and language. Use the variable picker to select action outputs, rather than typing variable names as ordinary text. <a href="https://support.apple.com/guide/shortcuts/use-variables-apdd02c2780c/ios" target="_blank" rel="noreferrer">Apple’s variable instructions</a></p>
+  <ol>
+    <li><strong>Define the window.</strong> Take <strong>Current Date</strong> and save it as <code>Window Start</code>. Use <strong>Adjust Date</strong> to add seven days to that date and save it as <code>Window End</code>. Format each with <strong>Format Date</strong> using ISO 8601; save the text outputs as <code>Range Start</code> and <code>Range End</code>. The dates must include a time-zone offset or <code>Z</code>. <a href="https://support.apple.com/guide/shortcuts/format-date-timestamps-apdfb33b0e17/ios" target="_blank" rel="noreferrer">Apple’s timestamp guidance</a></li>
+    <li><strong>Find the events.</strong> Add <strong>Find Calendar Events</strong>, limited to calendars you choose and events whose start date falls between the two window dates. Sort by start date, earliest first; limit to 200. This initial filter finds events starting in the window, so it can miss an event that started earlier and is still running.</li>
+    <li><strong>Make an event dictionary per result.</strong> Use <strong>Repeat with Each</strong> on the found events. Within the loop, get the current <code>Repeat Item</code>’s title, start date, and end date. Format both event dates as ISO 8601. Make the final action inside the loop a <strong>Dictionary</strong> with three Text values: <code>title</code> = that event’s title; <code>start</code> = its formatted start; <code>end</code> = its formatted end. The loop’s <code>Repeat Results</code> should be a list of these dictionaries, one per event. Save it as <code>Events</code>. <a href="https://support.apple.com/guide/shortcuts/use-repeat-actions-apdc11deb2c1/ios" target="_blank" rel="noreferrer">Apple’s Repeat Results guidance</a></li>
+    <li><strong>Build the payload as a Dictionary.</strong> Create top-level keys <code>events</code>, <code>rangeStart</code>, and <code>rangeEnd</code>. The <code>events</code> value must be the entire <code>Events</code> list, preserving each item as a dictionary. The other two values are the formatted range text variables. Save this dictionary as <code>Payload</code>. For zero found events, explicitly use an empty Array for <code>events</code>. Optional: add Text <code>timeZone</code> with an IANA name such as <code>Australia/Sydney</code>. <a href="https://support.apple.com/guide/shortcuts/dictionaries-apd43b69f337/ios" target="_blank" rel="noreferrer">Apple’s typed dictionary values</a></li>
+    <li><strong>Preview before uploading.</strong> Add <strong>Quick Look</strong> with <code>Payload</code> selected as its input. Check that <code>events</code> contains dictionaries, not event objects, a text string, or a second list wrapped around your list. For a first run, use one harmless test appointment on a calendar you chose. Quick Look can also preview <code>Events</code> immediately after the loop. <a href="https://support.apple.com/guide/shortcuts/test-your-actions-apda75604f37/ios" target="_blank" rel="noreferrer">Apple’s action testing guidance</a></li>
+    <li><strong>Configure the JSON request.</strong> Add a <strong>URL</strong> action with the exact private HTTPS endpoint copied from Nemo. Add <strong>Get Contents of URL</strong>, expand its options, set Method to <strong>POST</strong>, and set Request Body to <strong>JSON</strong>. Set headers <code>Content-Type</code> = <code>application/json</code> and <code>Authorization</code> = <code>Bearer YOUR_TOKEN</code>, with one space after <code>Bearer</code>. Replace <code>YOUR_TOKEN</code> with the actual token. Supply <code>Payload</code> as the body dictionary through the variable selector if your editor offers it. If it instead shows editable body rows, enter the same top-level keys there using the same typed values and variables. Do not add a wrapper key named <code>Payload</code>. <a href="https://support.apple.com/guide/shortcuts/request-your-first-api-apd58d46713f/ios" target="_blank" rel="noreferrer">Apple’s JSON request-body guidance</a></li>
+    <li><strong>Inspect the response.</strong> Add <strong>Quick Look</strong> after the request, with the request’s response selected. Run manually and approve the calendar and network access you intend to grant. A successful upload returns <code>"ok": true</code>. Return to Nemo → menu → Connected accounts → Refresh status and verify its last-sync time and event count.</li>
+  </ol>
+  <p>If the date formatter offers a custom pattern, use <code>yyyy-MM-dd'T'HH:mm:ssXXX</code> for the required seconds and colon time-zone offset.</p>
+  <aside>Device checkpoint: Apple documents JSON request bodies and typed dictionaries, but not every iOS version’s nested-array picker. If your editor will not accept the whole Events list as the array value, stop before uploading and verify that control on the phone. Do not change it to a Text value, wrap the list in another array item, or assume an untested File conversion will preserve the payload.</aside>
+
+  <details><summary>Expected body and troubleshooting</summary>
+  <p>This is the JSON shape the request must send. The dates are illustrative only; the Shortcut must generate current dates each run.</p>
+  <pre>{
+  "events": [
+    {
+      "title": "Example appointment",
+      "start": "2026-10-21T14:00:00+11:00",
+      "end": "2026-10-21T14:30:00+11:00"
+    }
+  ],
+  "rangeStart": "2026-10-21T08:00:00+11:00",
+  "rangeEnd": "2026-10-28T08:00:00+11:00",
+  "timeZone": "Australia/Sydney"
+}</pre>
+  <p>An empty window needs <code>"events": []</code>, with both current range fields still present. Optional per-event <code>allDay</code> must be a Boolean if included. Omit notes, attendees, locations, and attachments.</p>
+  <ul>
+    <li><strong>“events array”:</strong> check the array type and dictionary items; do not send the list as text or nest the whole list as one array element.</li>
+    <li><strong>“valid JSON”:</strong> check Request Body is JSON and the top-level body is the dictionary shown above. Use typed values rather than hand-building JSON text from appointment titles.</li>
+    <li><strong>Unauthorized:</strong> check the private token, its expiry, and the <code>Bearer</code> header. A replacement token requires updating the Shortcut.</li>
+    <li><strong>Cannot connect:</strong> keep Nemo running on the computer and check that phone access is ready; confirm the exact HTTPS address opens in Safari over cellular.</li>
+  </ul>
+  <p>Each successful upload replaces the previous snapshot, so removed events disappear. An empty upload clears the events in that snapshot. Disconnecting Calendar deletes the snapshot and revokes its token. Do not put the token in chat, URLs, or screenshots.</p>
+  </details>
+
+  <h2>3. Ask about your day</h2>
+  <p>Open <strong>Connected accounts</strong> from Nemo’s menu and enable <strong>Allow Nemo to use connected tools</strong> and ask “What does my day look like?” This preference stays on for later questions until you switch it off. While enabled, selected calendar information and Gmail summaries are added to new questions sent through your existing Hermes cloud AI. Switching it off or disconnecting does not erase information already sent or existing chat history.</p>
+  <a class="button" href="shortcuts://run-shortcut?name=Nemo%20Sync%20Calendar">Run my calendar Shortcut ↗</a>
+  <p class="small">This button runs an existing shortcut with that exact name; it does not create or install one. <a href="https://support.apple.com/guide/shortcuts/run-a-shortcut-from-a-url-apd624386f42/ios" target="_blank" rel="noreferrer">Apple’s documented run URL scheme</a></p>
+
+  <h2>Keep it up to date</h2>
+  <p>First verify a manual upload on the iPhone over cellular, including an empty calendar and the expected time zone. This is not a continuous calendar sync service. Then consider a Time of Day personal automation. Locked-phone execution, permissions, background timing, and the phone connection still require testing on your device. Until then, refresh by running the Shortcut manually.</p>
+  <p class="small">This token uploads only to your personal profile. Each family member creates their own token and Shortcut. Your paired devices can use your synced calendar when you allow connected tools in Settings. This guide was checked against Apple’s documentation on 21 October 2026; the native Shortcut’s full device flow remains unverified.</p>
+</main></body></html>

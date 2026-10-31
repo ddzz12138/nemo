@@ -1,0 +1,41 @@
+# OPTIONAL OPERATOR-OWNED PUBLIC RELAY. This file does not start a service.
+# Use a public server separate from the household PC, valid TLS certificates,
+# and an operator-generated secret. Never commit a configured secret.
+listening-port=3478
+tls-listening-port=443
+fingerprint
+use-auth-secret
+realm=YOUR-RELAY-HOSTNAME
+static-auth-secret=REPLACE-WITH-AT-LEAST-32-RANDOM-CHARACTERS
+cert=/etc/coturn/certs/fullchain.pem
+pkey=/etc/coturn/certs/privkey.pem
+min-port=49160
+max-port=49260
+stale-nonce=600
+user-quota=4
+total-quota=100
+no-cli
+no-multicast-peers
+# Current coturn denies loopback peers by default. Never enable allow-loopback-peers.
+# WebRTC uses UDP allocations even when its client-to-relay connection uses TLS/TCP.
+no-tcp-relay
+# Do not let a relay become a route into its operator's private networks.
+denied-peer-ip=0.0.0.0-0.255.255.255
+denied-peer-ip=10.0.0.0-10.255.255.255
+denied-peer-ip=100.64.0.0-100.127.255.255
+denied-peer-ip=127.0.0.0-127.255.255.255
+denied-peer-ip=169.254.0.0-169.254.255.255
+denied-peer-ip=172.16.0.0-172.31.255.255
+denied-peer-ip=192.168.0.0-192.168.255.255
+denied-peer-ip=224.0.0.0-255.255.255.255
+denied-peer-ip=::1
+denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+denied-peer-ip=fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+denied-peer-ip=::ffff:10.0.0.0-::ffff:10.255.255.255
+denied-peer-ip=::ffff:127.0.0.0-::ffff:127.255.255.255
+denied-peer-ip=::ffff:169.254.0.0-::ffff:169.254.255.255
+denied-peer-ip=::ffff:172.16.0.0-::ffff:172.31.255.255
+denied-peer-ip=::ffff:192.168.0.0-::ffff:192.168.255.255
+# The operator must review current coturn security advisories, metadata ranges,
+# bandwidth accounting, TLS renewal and network policy for their deployment.
+# No unlimited availability or free hosting is provided by this example.

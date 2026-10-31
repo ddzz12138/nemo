@@ -1,0 +1,17 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {once} from 'node:events';import {mkdtemp,rm,readFile} from 'node:fs/promises';import {join,resolve} from 'node:path';import {tmpdir} from 'node:os';import {randomUUID} from 'node:crypto';import {setTimeout as delay} from 'node:timers/promises';import {createNemoServer} from '../lib/personal-gateway.mjs';
+test('gateway shutdown awaits a cancelled reply and its final durable state before returning',async t=>{
+  const dataDir=await mkdtemp(join(tmpdir(),'nemo-shutdown-'));let release,entered,app;const gate=new Promise(resolve=>release=resolve),ready=new Promise(resolve=>entered=resolve);
+  t.after(async()=>{release();await app?.close();await rm(dataDir,{recursive:true,force:true});});
+  app=await createNemoServer({dataDir,publicDir:resolve('public'),pairingCode:'12345678',logger(){},provider:{status:()=>({connected:true}),async run(){entered();await gate;return{text:'LATE_CANCELLED_TEXT'};}}});app.server.listen(0,'127.0.0.1');await once(app.server,'listening');const base='http://127.0.0.1:'+app.server.address().port;
+  const paired=await fetch(base+'/api/pair',{method:'POST',headers:{'Content-Type':'application/json','X-Nemo-Request':'1'},body:JSON.stringify({code:'12345678'})}),cookie=paired.headers.get('set-cookie').split(';')[0];
+  const submitted=await fetch(base+'/api/chat',{method:'POST',headers:{Cookie:cookie,'Content-Type':'application/json','X-Nemo-Request':'1'},body:JSON.stringify({message:'Synthetic pending reply',requestId:randomUUID()})});assert.equal(submitted.status,202);await submitted.json();await ready;
+  let closed=false;const close=app.close().then(()=>{closed=true;});await delay(20);assert.equal(closed,false);release();await close;
+  const state=JSON.parse(await readFile(join(dataDir,'state.json'),'utf8'));assert.ok(Object.values(state.runs).every(run=>run.status==='failed'));assert.ok(!Object.values(state.sessions).some(session=>session.messages.some(message=>message.text==='LATE_CANCELLED_TEXT')));
+});
+
+test('a completed reply is already durably saved when completion is published',async t=>{
+  const dataDir=await mkdtemp(join(tmpdir(),'nemo-durable-complete-'));let app;t.after(async()=>{await app?.close();await rm(dataDir,{recursive:true,force:true});});
+  app=await createNemoServer({dataDir,publicDir:resolve('public'),pairingCode:'12345678',logger(){},provider:{status:()=>({connected:true}),async run(){return{text:'SYNTHETIC_DURABLE_REPLY'};}}});app.server.listen(0,'127.0.0.1');await once(app.server,'listening');const base='http://127.0.0.1:'+app.server.address().port,headers={'Content-Type':'application/json','X-Nemo-Request':'1'};
+  const paired=await fetch(base+'/api/pair',{method:'POST',headers,body:JSON.stringify({code:'12345678'})}),cookie=paired.headers.get('set-cookie').split(';')[0];
+  for(let turn=0;turn<3;turn++){const response=await fetch(base+'/api/chat',{method:'POST',headers:{...headers,Cookie:cookie},body:JSON.stringify({message:'Synthetic durable turn '+turn,requestId:randomUUID()})}),{runId}=await response.json();let complete=false;for(let i=0;i<100;i++){const run=await(await fetch(base+'/api/runs/'+runId,{headers:{Cookie:cookie}})).json();if(run.status==='completed'){complete=true;break;}await delay(5);}assert.equal(complete,true);const saved=JSON.parse(await readFile(join(dataDir,'state.json'),'utf8'));assert.equal(saved.runs[runId].status,'completed');assert.equal(saved.runs[runId].text,'SYNTHETIC_DURABLE_REPLY');}
+});

@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "policy": "chat-only",
+  "files": {
+    "run_agent.py": "2dda8e9bb530d8da54cfb1625f624a5b9533300f1be828b689cfd5e73bbae373",
+    "agent/chat_completion_helpers.py": "15c2aa0e7863495546ad1bbaf8ad9c67de12fdbc65f10b91c7f51a210d0a5214",
+    "agent/codex_headers.py": "e9538b41a79fba585c43288ac37a625302d4aaea8d7895f452adab2d836db454",
+    "agent/codex_responses_adapter.py": "0e02447caa7ab5f5807718605b15723926bf5b95a635e9d789e72276e8724927",
+    "hermes_cli/runtime_provider.py": "6fa7cf555a6924fabac01212fdc38a88d1bae951b6a3a7be2ee85b9418020dda",
+    "tui_gateway/entry.py": "be1da5978e6b85847658f2e5f7a2d2578e04329ef9056c092e4fed2ec92e6273",
+    "tui_gateway/server.py": "34ef682ae88406b6b356d11ec6ddbddfb2e54f5bd147f4c7412a9eb48f170901",
+    "tui_gateway/contracts/sessions.py": "4092a0280d07ca20745805c16fa8df61af11dc7e859e45519c8bc1dc5116509e",
+    "tui_gateway/contracts/prompt_voice.py": "29fc3910fe26d19a9cfa8168dbc636bc8033e07521266c55cf87d7d5d92be92f",
+    "tui_gateway/prompt_turn.py": "e06fcb2694bf20b5aad96b81ca62adf1bf3feddb9c528469c45cf7f2a9a3030f",
+    "agent/title_generator.py": "a749a64dd55f777fd4d0236429d7f89f8d7c28434727efdde240d5fe376673ee"
+  },
+  "managedReadFiles": {
+    "model_tools.py": "ba97dd616fac870af2fb21823fb0e18f71ca4444abffd8361fa9a05f02518b30",
+    "tools/registry.py": "597777c40320f90f5ca62f10d74a3112061193d2c712b752fd9d7300350f3c4b",
+    "tui_gateway/tool_progress.py": "f51ee8c768f7d5e6c4c441f5de54f36ba7778d54a52dc011c468f3507ee8be0e",
+    "tui_gateway/contracts/events.py": "0a3d655a849bc6907fceb2b7395db27285b85ac97f8e35382c9e62decf9b938f",
+    "agent/agent_init.py": "6c94abccb46c52b6e92123c01e1fda32c69f946d2923785f05106c3ca78d8195",
+    "agent/tool_executor.py": "c2c65ba2d5d0847f968321e0438f2dd3c87973cb2680acb5cd52192f48b602ab"
+  },
+  "historyFiles": {
+    "tui_gateway/methods_session.py": "bee844617ba9fc14b2c8cbb673e99a652e108276c31802f0073c732ebc897bf2",
+    "tui_gateway/session_history.py": "0b774d0bf78666cc58cfe6e59f9c80933d6477fa7c4f605b18a0591cf6e9b23e",
+    "tui_gateway/session_lifecycle.py": "da3390b37f34741848ae6c737b962348b874303901c0dcc57e110d36c87cfddd",
+    "tui_gateway/rpc_dispatch.py": "d81dd5b12e67305c5838c5a8b19a900a6aa2285beec5fd95454671051aaa22b1",
+    "hermes_state.py": "5e528d23cf1b08d4955e7ba8058062b12528265406a4ef5a74013cefefa6b281",
+    "hermes_state_sessions.py": "2c4d08e2772f568aafb57774bc40060c5833adcd56e9fb82e2a5913e27e30fd9",
+    "hermes_state_messages.py": "915e1cb602fc8c1e15040251849990b478c1f71a6a8d32684f619a662479eed3",
+    "hermes_state_rewind.py": "5bf7ae72957ce981816edc0ac3816cc8cffce4b9bb709a838c35f6b95e0a6391"
+  },
+  "interactionFiles": {
+    "tools/clarify_tool.py": "a0e08eb9012bee39b51e25f611cffa921a98a4187a28dc2c94363dc39087378f",
+    "tools/todo_tool.py": "7ea1b6428139d72874eff8072a3bef16b8bcbe2d694f09fd6cae0996fc3b6cdc",
+    "tools/schema_sanitizer.py": "8f58baf2faf47fe95b47d3372fc8a29ed13854ca0b192980fbb6041981c507cf",
+    "agent/inline_tool_executors.py": "e5ccd18e191c52033801329c1c936adbaf2ee119baad646ccd3ac3f72b1b50e2",
+    "tui_gateway/agent_callbacks.py": "13fd0384192d8a50ad79e6af56407f14ba3052a86a65cacdb37d93d2ea4c7519",
+    "tui_gateway/server_requests.py": "c8472ca3a2137de6dc66e8b6fd28c67eb7ea8081e78a8d4d4c34afc07804468b",
+    "tui_gateway/contracts/server_requests.py": "109aa34931b04f471e773e8e6e1aaf548769aabb2abe0b37cfc7816352bf0d99"
+  }
+}
