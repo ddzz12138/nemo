@@ -23,7 +23,9 @@
     ui.inviteCode.textContent = invitation.code; ui.inviteTitle.textContent = `Invitation for ${profile.name}`; ui.invitePanel.hidden = false; ui.invitePanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   async function refresh() {
-    session = await api('/api/session');
+    // Navigation may already be loading identity. Share that request so its
+    // first profile update cannot invalidate a competing public session read.
+    session = await window.NemoIdentity.load();
     if (!session.authenticated) { ui.profiles.replaceChildren(); ui.createProfile.hidden = true; ui.invitePanel.hidden = true; ui.inviteCode.textContent = ''; ui.pairLink.hidden = false; throw new Error('Pair this device in chat to open your profile.'); }
     ui.pairLink.hidden = true;
     const owner = session.profile.role === 'owner'; ui.createProfile.hidden = !owner; ui.pageTitle.textContent = owner ? 'Your family.' : 'Your profile.';

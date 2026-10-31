@@ -26,6 +26,8 @@ test('native chat homes inherit no host secrets, history, MCP settings or runtim
   const config = JSON.parse(await readFile(join(worker.home, 'config.yaml'))); assert.equal(config.model.base_url, 'http://127.0.0.1:12345/v1'); assert.deepEqual(config.mcp_servers, {}); assert.deepEqual(config.dashboard, {turn_isolation:false});
   assert.equal(config.model.api_key, 'a'.repeat(64)); assert.equal(JSON.stringify(config).includes('HOST_PRIVATE'), false);
   assert.deepEqual(config.auxiliary, {title_generation:{enabled:false}});
+  assert.equal(config.agent.environment_probe, false);
+  assert.equal(launch.options.env.PYTHONDONTWRITEBYTECODE, '1');
   const base = { dataDir, profile, pythonPath: resolve('fixture-python'), sourceRoot: resolve('fixture-source'), brokerGrant: 'a'.repeat(64), model: 'synthetic', apiMode: 'chat_completions' };
   await assert.rejects(startNativeChatWorker({ ...base, brokerUrl: 'https://external.example/v1' }), /loopback/);
 });

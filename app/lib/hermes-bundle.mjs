@@ -5,7 +5,9 @@ import { copyFile, lstat, mkdir, readFile, readdir, realpath, rename, writeFile 
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { verifyNativeRuntime } from './native-compatibility.mjs';
 
-const SOURCE_DIRS = new Set(['acp_adapter', 'agent', 'assets', 'cron', 'gateway', 'hermes_cli', 'hermes_platform', 'locales', 'optional-mcps', 'optional-skills', 'plugin-catalog', 'plugins', 'pm', 'providers', 'skills', 'tools', 'tui_gateway']);
+// Optional skill packs are not exposed by Nemo's read-only tool policy. Their
+// separate datasets/licences are outside this runtime; retain core code/notices.
+const SOURCE_DIRS = new Set(['acp_adapter', 'agent', 'assets', 'cron', 'gateway', 'hermes_cli', 'hermes_platform', 'locales', 'optional-mcps', 'plugin-catalog', 'plugins', 'pm', 'providers', 'skills', 'tools', 'tui_gateway']);
 const OMIT_PARTS = new Set(['.git', '.hermes', '.venv', 'venv', '__pycache__', 'node_modules', 'tests', 'test', 'tests-js', '.pytest_cache', '.mypy_cache']);
 const SHA = /^[a-f0-9]{64}$/;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -23,7 +25,7 @@ export function allowedHermesSource(path) {
   if (excluded(path)) return false;
   const parts = path.split('/');
   if (parts.length === 1) return /\.py$/.test(path) || ['LICENSE', 'SOUL.md', 'README.md', 'pyproject.toml', 'uv.lock'].includes(path);
-  return SOURCE_DIRS.has(parts[0]) && /\.(?:py|json|ya?ml|md|txt|toml|j2|jinja2|sql|csv|tsv|html|css|js|svg|png|ico|po|mo)$/.test(path);
+  return SOURCE_DIRS.has(parts[0]) && (/\.(?:py|json|ya?ml|md|txt|toml|j2|jinja2|sql|csv|tsv|html|css|js|svg|png|ico|po|mo)$/.test(path) || /^(?:LICENSE|NOTICE|COPYING)(?:[._-][\w.-]+)?$/i.test(parts.at(-1)));
 }
 async function regularFile(root, name) {
   const path = join(root, safeRelative(name));
@@ -180,7 +182,7 @@ export async function prepareHermesBundle({ sourceRoot, pythonRoot, sitePackages
   await generated('source/install-stamp.json', { schema: 1, distribution: 'desktop-app', updateMechanism: 'external', commit: sourceRevision.trim(), tag: `nemo-${sourceRevision.trim().slice(0, 12)}` });
   const dependencyLock = { version: 1, pythonVersion: plan.pythonVersion, extras: plan.extras, packages: plan.packages.map(item => ({ name: item.name, version: item.version })) };
   await generated('dependencies.lock.json', dependencyLock);
-  await generated('THIRD_PARTY_NOTICES.txt', ['Nemo bundled assistant runtime', `Hermes source revision: ${sourceRevision.trim()}`, 'Hermes: MIT; see source/LICENSE', 'Python: Python Software Foundation; see python/LICENSE.txt', '', ...plan.packages.map(item => `${item.name}==${item.version}: ${item.license.replaceAll(/\s+/g, ' ').slice(0, 180)} (full notices under python/Lib/site-packages)`)].join('\n'));
+  await generated('THIRD_PARTY_NOTICES.txt', ['Nemo bundled assistant runtime', `Hermes source revision: ${sourceRevision.trim()}`, 'Hermes: MIT; see source/LICENSE and nested LICENSE/NOTICE files', 'Python: Python Software Foundation; see python/LICENSE.txt', '', 'Apache-2.0 adapted portions; terms: source/plugins/security-guidance/LICENSE', 'agent/pet/generate/atlas.py: OpenAI hatch-pet.', 'tools/file_tools_write_guards.py: Roo-Code.', 'tools/schema_sanitizer.py: block/goose.', 'tools/vision_tools_image_prep.py: QwenLM/qwen-code; Copyright 2026 Qwen.', 'Original attribution comments are retained beside the code.', '', ...plan.packages.map(item => `${item.name}==${item.version}: ${item.license.replaceAll(/\s+/g, ' ').slice(0, 180)} (full notices under python/Lib/site-packages)`)].join('\n'));
   onProgress('Checking the assistant after moving its folder and using a new empty home.');
   const relocation = await probeRelocated(staging, onProgress);
   // Probe code must never alter release bytes. Refuse unexpected cache/state.

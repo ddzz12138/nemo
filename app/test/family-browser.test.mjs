@@ -42,7 +42,14 @@ test('real WebAuthn round trips bind two passkeys to private profiles and show v
   const childCredential=(await cdp.send('WebAuthn.getCredentials',{authenticatorId})).credentials[0];
   await signOut();await cdp.send('WebAuthn.clearCredentials',{authenticatorId});
   await cdp.send('WebAuthn.addCredential',{authenticatorId,credential:ownerCredential});await signIn(owner);
-  await page.goto(base+'/family.html');await page.getByText('Choose tools for this child',{exact:true}).click();
+  // Make an accidental second startup read finish after navigation's identity
+  // update. It used to reject that response and leave Family without profiles.
+  let familySessionReads=0;
+  await page.route('**/api/session',async route=>{familySessionReads++;if(familySessionReads>1)await new Promise(done=>setTimeout(done,150));await route.continue();});
+  await page.goto(base+'/family.html');await page.waitForFunction(()=>window.NemoIdentity?.profile);
+  assert.equal(familySessionReads,1,'Family and navigation must share their initial session lookup');
+  await page.getByText('Choose tools for this child',{exact:true}).click();
+  await page.unroute('**/api/session');
   const childCard=page.locator('.profile-card').filter({has:page.getByRole('heading',{name:child.name,exact:true})});
   await childCard.getByLabel('Calendar',{exact:true}).check();
   await page.waitForFunction(async id=>{const result=await (await window.nemoFetch('/api/profiles')).json();return result.profiles.find(item=>item.id===id)?.capabilityGrants.calendar===true;},child.id);

@@ -48,6 +48,9 @@ bundled compression helper without running dependency install hooks.
 The Hermes payload is prepared with the explicit release
 recipe in docs/HERMES_BUNDLE.md. A fresh checkout does not contain private staged
 runtime resources; complete verified resources are required before packaging.
+The reproducible Windows recipe is now `npm run desktop:prepare:candidate`, using
+the reviewed public runtime snapshot and pinned public Python/wheel inputs. See
+[installation pilot](docs/INSTALLATION_PILOT.md) for build, signing and acceptance gates.
 `npm run desktop:package` builds the Windows application folder;
 `npm run desktop:make` builds the Windows installer. `npm run host:setup` opens the same
 private setup controller from a source checkout. Close an existing managed Nemo

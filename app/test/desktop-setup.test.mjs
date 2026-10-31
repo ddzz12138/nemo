@@ -193,6 +193,7 @@ test('desktop personal invitations require an explicit identity switch and membe
   await page.goto(fixture.origin+'/desktop.html#invite='+other.code);await page.getByRole('button',{name:'Sign out Asha',exact:true}).waitFor();
   assert.equal((await fixture.app.profiles.previewInvite(other.code)).profile.id,member.id);
   await page.getByRole('button',{name:'Sign out Asha',exact:true}).click();
+  await page.getByRole('button',{name:'Open Sam’s space',exact:true}).waitFor();
   assert.equal((await(await context.request.get(fixture.origin+'/api/session')).json()).authenticated,false);
   assert.equal((await fixture.app.profiles.previewInvite(other.code)).profile.id,member.id);
   await page.getByRole('button',{name:'Open Sam’s space',exact:true}).click();await page.getByRole('heading',{name:'Hello, Sam.',exact:true}).waitFor();
