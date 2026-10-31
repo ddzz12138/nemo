@@ -8,12 +8,13 @@ export function setupState(status) {
   if (status.runtime?.ready !== true) return 'runtime';
   const assistant = status.assistant || status.runtime?.assistant;
   if (!status.app?.ready || status.runtime?.connected === false || status.app?.assistantConnected === false ||
-      assistant && (assistant.connected !== true || assistant.phase !== 'connected' || assistant.provider === 'chatgpt' && assistant.planUsageEnabled !== true)) return 'assistant';
+      assistant && (assistant.provider !== 'chatgpt' || assistant.connected !== true || assistant.phase !== 'connected' || assistant.planUsageEnabled !== true)) return 'assistant';
   return 'ready';
 }
 
 export function canOpenPersonalSpace(status) {
   const assistant = status?.assistant || status?.runtime?.assistant;
+  if (assistant?.localOnly === true || assistant?.provider && assistant.provider !== 'chatgpt') return false;
   const confirmation = assistant?.connected === true && (assistant.confirmationRequired === true || assistant.planUsageAcknowledged === false);
   if (confirmation) return false;
   return status?.setupCompleted === true && status.app?.ready === true || setupState(status) === 'ready' && assistant?.confirmationRequired !== true && assistant?.planUsageAcknowledged !== false;

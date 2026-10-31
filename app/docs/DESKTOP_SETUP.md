@@ -1,7 +1,7 @@
 # Nemo desktop setup
 
 The Ollama-derived desktop interface handles first name, bundled assistant
-preparation and ChatGPT sign-in in one window. Family, Memory, personal accounts
+preparation and ChatGPT sign-in in one window. Family, private history, personal accounts
 and optional phone access live in the same software. Parents never enter network
 settings, terminal commands, runtime paths or API keys in this flow.
 
@@ -70,9 +70,10 @@ the same setup layout with a fragment capability fallback.
   settings. The first name comes from the local
   profile registry. Setup never presents a QR before the real host readiness
   checks permit pairing. The QR is encoded with `qrcode`; it is not a mock image.
-- `FamilyPage.jsx`, `FamilyReview.jsx` and `MemoryPage.jsx` reuse existing
-  authorized APIs inside the shared sidebar. The desktop does not navigate out
-  to the old phone pages. Those phone pages remain active and are retained.
+- `FamilyPage.jsx` and `FamilyReview.jsx` reuse existing authorized APIs inside
+  the shared sidebar. Model-backed `MemoryPage.jsx` and School notice are
+  experimental groundwork, hidden from the public app. Old direct Memory links
+  return a deferred-feature response; phone History stays available.
 - `lib/assistant-onboarding.mjs` connects an eligible existing ChatGPT plan with
   browser sign-in, S256 PKCE, state and OIDC nonce/signature validation. It uses
   Nemo's own dynamic registration and a stable installation identifier. The

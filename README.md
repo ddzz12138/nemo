@@ -4,13 +4,15 @@ A personal AI. For everyone at home. Nemo is an independent family experience bu
 
 **[Visit the Nemo website](https://ddzz12138.github.io/nemo/)**
 
+**The first public app version requires an eligible ChatGPT subscription.** No local AI models, Ollama installation or model downloads are part of this release. Relevant conversation context is sent to ChatGPT for replies; profiles and chat history are stored on the host PC.
+
 The maintained application source is in **[app/](app/README.md)**. It includes the desktop interface, server, tests, build instructions and licence notices. The first signed Windows installer and clean-PC installation pilot are being prepared; this source import does not publish a downloadable installer.
 
 The announcement website remains in `docs/`, published through GitHub Pages. Its files, URLs and deployment workflow are separate from the application.
 
 The website contains fictional product examples and has no connection to a family's private Nemo server. The `VERSION` and `CHANGELOG.md` currently track the website publication, not an installable app release.
 
-Home shows the vision; **How it works** shows the guided desktop setup; **About Nemo** explains Hermes and Nemo's family features. Shared family-calendar planning is labelled as a future feature. Optional connections and personal memory need their own setup.
+Home shows the vision; **How it works** shows the guided desktop setup; **About Nemo** explains Hermes and Nemo's family features. Shared family-calendar planning is labelled as a future feature. Optional accounts need their own setup. Automatic Memory and local-model features shown in the vision are deferred from the first public app.
 
 The footer links to **Privacy**, **Terms & safety**, **Licences & credits**, and the public contact address. These explain the website and self-hosted app separately, connected-provider data handling and the current invited-adult preview. They do not claim Google verification or approval for children to use a particular AI account. Public child access remains pending provider and safety review.
 

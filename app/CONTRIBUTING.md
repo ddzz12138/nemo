@@ -1,7 +1,7 @@
 # Contributing
 
 Nemo makes Hermes approachable from a phone, including private family profiles,
-simple connections, understandable Memory and honest live activity.
+simple connections, private history and honest live activity. The first public version uses only an eligible ChatGPT subscription. Memory/local-model modules are experimental groundwork, disabled in public entry points.
 
 Use Node.js 22 or newer. Run `npm test` and `npm run check`. Tests use synthetic
 data; never add real messages, credentials or private hostnames to fixtures.

@@ -87,7 +87,7 @@ test('the complete accessible hero is delivered in HTML, before enhancement', ()
   assert.ok(!/<(?:input|textarea|button|form)\b/.test(figure), 'phone controls stay inert');
   assert.ok(!/hero-controls|id="(?:finish|replay)"|aria-live/.test(home), 'decorative looping needs no manual controls or repeated live announcements');
   assert.ok(home.includes('<span class="sr-only">For everyone</span>'));
-  assert.ok(home.includes('Illustrative sequence. Gmail and memory need their own setup.'));
+  assert.ok(home.includes('Illustrative sequence. Gmail is optional; automatic Memory is deferred from v1.'));
 });
 
 test('the approved setup sequence and all four disclosure answers are preserved', () => {
@@ -95,10 +95,10 @@ test('the approved setup sequence and all four disclosure answers are preserved'
   assert.equal((how.match(/<details>/g) || []).length, 4);
   for (const sentence of [
     'Make your space. Prepare the included assistant.',
-    'Use an eligible ChatGPT plan. No API key in this flow.',
+    'Use an eligible ChatGPT subscription. No API key or local model to set up.',
     'Chat on your computer. Return to your saved history.',
-    'The current flow uses Windows and an eligible ChatGPT plan. Your plan’s usage limits and credit settings apply. Public distribution still needs release verification.',
-    'These are optional and need their own connection or dependency setup. The core desktop setup does not automatically connect every service.',
+    'The first version uses Windows and an eligible ChatGPT subscription. Local AI models are not included. Your plan’s usage limits and credit settings apply. Public distribution still needs release verification.',
+    'Calendar and Gmail are optional connections. Automatic Memory and local AI models are deferred from v1.',
     'Once the hosted connection is configured and verified, Nemo can issue a personal invitation. Phone access needs the home computer awake and online.',
     'Your chats and personal data are hosted on your computer. The connected AI provider receives the conversation context and permitted tool results needed to answer.',
   ]) assert.ok(text(how).includes(sentence), sentence);
@@ -107,6 +107,7 @@ test('the approved setup sequence and all four disclosure answers are preserved'
 test('Home keeps the agreed examples and product limits', () => {
   const home = text(htmls.get('index.html'));
   for (const phrase of [
+    'ChatGPT subscription required · No local models in v1',
     'Future vision', 'Saturday, 11–1.', 'Each person chooses what to share.',
     'Child mode', 'What have you tried?', 'Parent-set tools. Visible parent review.',
     'Prefers quiet walks', 'Training for a 10K', 'Loves space · Child mode',
@@ -123,7 +124,7 @@ test('About retains the fair Hermes comparison, five rows and native FAQs', () =
     'Hermes on its own', 'Hermes through Nemo', 'The same agent, with a family experience around it.',
     'Hermes has its own interfaces and memory.', 'Nous Research',
     'Nemo does not yet bring every Hermes tool into the family app.',
-    'Calendar, Gmail and memory each retain their own setup requirements.',
+    'The first version requires a ChatGPT subscription. Calendar and Gmail are optional; automatic Memory and local AI models are deferred.',
   ]) assert.ok(text(about).includes(phrase), phrase);
 });
 

@@ -1,26 +1,28 @@
 # Start with your family
 
+The first public version requires an eligible ChatGPT subscription. No local AI model, Ollama installation or API key is offered. Relevant context goes to ChatGPT for replies; saved profiles and history stay on the PC. Automatic Memory and local-model workflows are deferred.
+
 ## Windows desktop preview
 
 1. Open **Nemo** from the Windows Start menu. If updating, quit the old Nemo from
    its menu before running the new installer. Your saved conversations remain.
-2. Enter your first name and choose **Set up my assistant**. Hermes and its
+2. Enter your first name and choose **Continue**. Hermes and its
    dependencies are included; Nemo prepares them for you.
 3. Choose **Continue with ChatGPT**. In the browser, select your account and
    workspace and approve Nemo's connection and use of your ChatGPT plan.
 4. Nemo returns to the foreground when ready. Read the plan-use notice and
-   choose **Got it**. An eligible existing ChatGPT Plus or Pro plan is required;
+   choose **Got it**. An eligible existing ChatGPT subscription is required;
    the account's ChatGPT usage and credit settings apply.
-5. Choose **Use Nemo on this computer**, confirm your name, then send a message.
-   Open **History** to return to the conversation later.
+5. Choose **Continue as [your name]**, confirm your name, then send a message.
+   Use **Your conversations** to revisit it, or **New Chat** to start another.
 
 If the browser did not open, choose **Open sign-in again**. If a saved account
-needs recovery, choose **Finish connecting my assistant**. If a usage limit is
+needs recovery, choose **Finish connecting**. If a usage limit is
 reached, use **Manage usage** to review ChatGPT settings. Nemo does not require
 OpenRouter credits or switch to a different provider automatically.
 
 If Nemo says its assistant files could not be verified, quit Nemo and install
-the latest preview, then choose **Set up my assistant** again. Your saved chats
+the latest preview, then choose **Prepare Nemo** again. Your saved chats
 remain on this computer.
 
 The desktop's original phone setup requires its hosted registration service and
@@ -33,8 +35,8 @@ the host running; choose **Quit Nemo** from its menu to stop it.
 
 For a manually configured host:
 
-1. Install Node.js 22+ and sign into a compatible Hermes runtime.
-2. Run `nemo setup`, `nemo doctor`, then `nemo start`.
+1. Install Node.js 22+ and prepare a compatible Hermes runtime using the contributor instructions.
+2. Run `nemo host-setup` and finish the guided ChatGPT connection. Later, `nemo start` reuses it; a separate Hermes sign-in is not used.
 3. Configure private HTTPS. With Tailscale, connect the host and phones to the
    same network and configure Serve for Nemo's loopback port.
 4. Run `nemo invite` on the host and enter that invitation on your own phone.
@@ -48,7 +50,7 @@ For a family member:
 2. Enter your personal invitation and follow `/setup.html` for Home Screen setup.
 3. Connect your own Gmail. Choose optional snippet sync separately and review
    whether retrieved information may be used in AI replies.
-4. Review/correct facts in Memory. Calendar remains a separate Shortcut snapshot.
+4. Revisit private chats in History. Automatic Memory is deferred; calendar remains a separate Shortcut snapshot.
 5. Open Tasks to see recent replies and stop active work.
 
 The host must stay online. Invitations are single-use; request another to add a

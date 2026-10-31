@@ -1,6 +1,6 @@
 # ChatGPT plan connection
 
-Nemo also supports an explicit [local Gemma assistant](LOCAL_ASSISTANT.md). New installations can use local mode without signing in to ChatGPT. The connection behavior below applies when the host chooses ChatGPT; existing grants are preserved when switching to local.
+The first public version requires an eligible ChatGPT subscription. Local-model selection is unavailable. Existing ChatGPT connections are retained across updates; a previous experimental local selection requires explicit ChatGPT opt-in.
 
 The Windows desktop route is **Nemo interface → guarded Hermes agent → the
 parent's authorized ChatGPT plan**. It does not require OpenRouter credits or an

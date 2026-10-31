@@ -80,7 +80,7 @@ test('shared header preserves destinations, account deep links and identity acro
     await page.waitForFunction(()=>document.querySelector('.nemo-profile-button [data-profile-name]')?.textContent==='Dan');
     assert.equal(await page.locator('.nemo-header').count(),1,path);
     await page.getByRole('button',{name:'Open menu',exact:true}).click();
-    for(const label of ['Chat','History','Memory','Tasks','Reminders','Tools & setup help'])assert.equal(await page.locator('#nemoMenu').getByRole('link',{name:label,exact:true}).isVisible(),true,path+' '+label);
+    for(const label of ['Chat','History','Tasks','Reminders','Tools & setup help'])assert.equal(await page.locator('#nemoMenu').getByRole('link',{name:label,exact:true}).isVisible(),true,path+' '+label);
     await page.keyboard.press('Escape');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,path);
     const duplicates=await page.evaluate(()=>{const ids=[...document.querySelectorAll('[id]')].map(node=>node.id);return ids.filter((id,index)=>ids.indexOf(id)!==index);});assert.deepEqual(duplicates,[],path);
@@ -93,7 +93,7 @@ test('shared header preserves destinations, account deep links and identity acro
   assert.equal(new URL(page.url()).hash,'');
   await page.keyboard.press('Escape');
   await page.getByRole('button',{name:'Open menu',exact:true}).click();await f.screenshot('nemo-reference-menu');await page.keyboard.press('Escape');
-  await page.getByRole('button',{name:'Open menu',exact:true}).click();await page.locator('#nemoMenu').getByRole('link',{name:'Memory',exact:true}).click();
+  await page.goto(f.base+'/memory.html'); // Experimental Memory is tested directly; public navigation defers it.
   await page.locator('#memory-summary').getByText('You prefer short answers with the actions first.',{exact:true}).waitFor();
   await page.getByRole('button',{name:'+ Add',exact:true}).click();await page.locator('#memory-editor-text').fill('Owner-only sample memory.');await page.getByRole('button',{name:'Save memory',exact:true}).click();
   await page.getByRole('button',{name:'Edit memory: Owner-only sample memory.',exact:true}).waitFor();
@@ -108,9 +108,9 @@ test('shared header preserves destinations, account deep links and identity acro
   assert.deepEqual(f.errors,[]);
 });
 
-test('Memory keeps its own destination and explains an unavailable engine instead of opening History',{skip:!chromium,timeout:60000},async t=>{
+test('public navigation defers Memory and an old direct Memory link fails safely',{skip:!chromium,timeout:60000},async t=>{
   const f=await fixture(t,{memory:false}),{page}=f;await page.goto(f.base+'/');
-  await page.getByRole('button',{name:'Open menu',exact:true}).click();await page.locator('#nemoMenu').getByRole('link',{name:'Memory',exact:true}).click();
+  await page.getByRole('button',{name:'Open menu',exact:true}).click();assert.equal(await page.locator('#nemoMenu').getByRole('link',{name:'Memory',exact:true}).count(),0);await page.goto(f.base+'/memory.html');
   await page.locator('#memory-message').filter({hasText:'Saved memory is not connected'}).waitFor();
   assert.equal(new URL(page.url()).pathname,'/memory.html');assert.equal(await page.getByRole('button',{name:'+ Add',exact:true}).isEnabled(),false);assert.deepEqual(f.errors,[]);
 });

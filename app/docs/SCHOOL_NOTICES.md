@@ -1,8 +1,10 @@
-# Selected school-notice briefing
+# Experimental school-notice design (deferred)
 
-This alpha.15 workflow reads one Gmail message chosen by the signed-in person and uses local `gemma4:12b` through guarded Hermes to extract administrative actions. ChatGPT is neither required nor used. It does not solve assessed schoolwork.
+**Not available in the first public release.** Nemo requires a ChatGPT subscription and does not offer local models. The public sidebar hides this workflow and its endpoints reject ChatGPT before reading a Gmail notice. The following records the separate experimental design, not public setup instructions.
 
-## Use it
+The earlier alpha.15 experiment reads one Gmail message chosen by the signed-in person and uses local `gemma4:12b` through guarded Hermes to extract administrative actions. ChatGPT is neither required nor used. It does not solve assessed schoolwork.
+
+## Experimental interaction design
 
 1. Connect your own Gmail in Settings. The host's assistant must be set to local Gemma.
 2. Open **School notice** in Nemo's sidebar. Search by the school's sender, subject or a distinctive phrase.
@@ -47,6 +49,6 @@ These checks establish source matching and bounded interpretation. They do not p
 
 ## Verification
 
-Run the synthetic application suite with `npm test`. It covers bounded Gmail reads, profile identity, exact evidence, consent, expiry, revocation, account changes and cleanup. The optional `node scripts/verify-school-notice.mjs --synthetic-live` uses a configured local model with synthetic mail; it is not an ordinary health check.
+Run the synthetic application suite with `npm test`. It covers bounded Gmail reads, profile identity, exact evidence, consent, expiry, revocation, account changes and cleanup. The earlier live-local verification script is omitted from the public release. Synthetic library tests remain for future development.
 
 A real user-selected message and physical phone still need separate acceptance. No historical maintainer run establishes the new installer's readiness. Gmail, school-notice briefings and local models are outside the first ChatGPT desktop installation pilot.

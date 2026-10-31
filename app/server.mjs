@@ -1,20 +1,32 @@
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createFamilyServer } from './lib/family-server.mjs';
-import { createProfileMemory } from './lib/profile-memory.mjs';
 import { loadConfig } from './lib/config.mjs';
-import { loadNativeSettings,createNativeChat } from './lib/native-chat.mjs';
 import { createPhoneLink } from './lib/phone-link.mjs';
-import { readAssistantSelection } from './lib/desktop-assistant.mjs';
-import { checkLocalOllama, LOCAL_OLLAMA } from './lib/local-ollama.mjs';
+import { createDesktopAssistant } from './lib/desktop-assistant.mjs';
 const ROOT = dirname(fileURLToPath(import.meta.url));
 export async function createNemoServer(options = {}) {
   const config = await loadConfig({ ...(options.dataDir ? { dataDir: options.dataDir } : {}) });
   const hermesOptions = { ...(config.hermesLauncher ? { launcher: config.hermesLauncher } : {}), ...(config.hermesHome ? { hermesHome: config.hermesHome } : {}), hermesPython: config.hermesPython, hermesSource: config.hermesSource };
-  const local = (await readAssistantSelection(config.dataDir))?.provider === 'local';
-  if (local) { const status = await checkLocalOllama(); Object.assign(hermesOptions, { localModel: LOCAL_OLLAMA, localStatus: () => status }); }
-  const nativeFactory=async context=>{const settings=await loadNativeSettings(config.dataDir);return settings.enabled?createNativeChat({...context,...settings}):null;};
-  return createFamilyServer({ dataDir: config.dataDir, publicOrigin: config.publicOrigin, hermesOptions, nativeFactory: local ? null : nativeFactory, phoneLinkFactory: createPhoneLink, publicDir: join(ROOT, 'public'), memoryFactory: createProfileMemory, ...options });
+  let assistant;
+  // Explicit provider injection is the integration-test seam. Normal CLI and
+  // desktop launches must not inherit Hermes' model/API-key/fallback settings.
+  if (!options.provider) {
+    const selected = options.hermesOptions || {};
+    if (selected.localModel || selected.providerKey || selected.requireChatGPT === false || options.nativeFactory || options.memoryFactory) throw new Error('This release supports only a ChatGPT subscription. Local-model features are not available.');
+    if (!selected.chatgptSession) assistant = await createDesktopAssistant({ dataDir: config.dataDir, openExternal: async () => { throw new Error('Connect your ChatGPT subscription in Nemo desktop setup.'); } });
+    Object.assign(hermesOptions, selected, { requireChatGPT: true,
+      chatgptSession: selected.chatgptSession || (() => assistant.credentials()),
+      chatgptStatus: selected.chatgptStatus || (() => assistant?.status() || { connected: false, planUsageEnabled: false }),
+      onChatGPTFailure: selected.onChatGPTFailure || (code => assistant?.reportInferenceFailure(code)) });
+  }
+  try {
+    const app = await createFamilyServer({ dataDir: config.dataDir, publicOrigin: config.publicOrigin, phoneLinkFactory: createPhoneLink, publicDir: join(ROOT, 'public'), ...options,
+      hermesOptions, nativeFactory: options.provider ? options.nativeFactory : null, memoryFactory: options.provider ? options.memoryFactory : null });
+    const close = app.close;
+    app.close = async () => { try { await close(); } finally { await assistant?.close(); } };
+    return app;
+  } catch (error) { await assistant?.close(); throw error; }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const { port } = await loadConfig();

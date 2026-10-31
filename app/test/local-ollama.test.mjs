@@ -5,8 +5,6 @@ import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createLocalOllamaBroker, createLocalInferenceQueue, toLocalRequest, fromLocalResponse, checkLocalOllama, LOCAL_MODEL_ALIAS, LOCAL_OLLAMA } from '../lib/local-ollama.mjs';
-import { createDesktopAssistant } from '../lib/desktop-assistant.mjs';
-import { setupState } from '../public/desktop-setup.mjs';
 import { createHermesProvider } from '../lib/hermes.mjs';
 import { createProfileStore } from '../lib/profile-store.mjs';
 import { createCalendarStore } from '../lib/calendar.mjs';
@@ -134,30 +132,6 @@ test('local family chat supports Memory and the full desktop connection policy',
     catch (error) { error.message += ' Static policy diagnostics: ' + JSON.stringify(diagnostics); throw error; }
     assert.equal(result.text, 'LOCAL_OK'); assert.equal(result.toolCalls, 0); assert.deepEqual(diagnostics, []);
   }
-});
-
-test('fresh local setup never constructs ChatGPT onboarding or opens credentials', async t => {
-  const dataDir = await directory(t); let cloudCalls = 0, restarts = 0;
-  const assistant = await createDesktopAssistant({ dataDir, cloudFactory: async () => { cloudCalls++; throw new Error('must not open credentials'); }, localCheck: async () => ({ connected: true }), onConnected: async () => { restarts++; } }); t.after(() => assistant.close());
-  assert.equal(assistant.status().provider, 'ollama'); assert.equal(await assistant.credentials(), null); assert.equal(cloudCalls, 0);
-  assert.equal(setupState({ owner: { configured: true }, runtime: { ready: true, connected: true }, app: { ready: true, assistantConnected: true }, assistant: assistant.status() }), 'ready');
-  await assistant.begin({ provider: 'local' }); assert.equal(restarts, 1); assert.equal(cloudCalls, 0);
-});
-
-test('existing cloud choice survives upgrade; selecting local preserves grants and cannot fall back', async t => {
-  const dataDir = await directory(t); const grant = 'synthetic opaque protected bytes'; await writeFile(join(dataDir, 'assistant-provider.dpapi'), grant);
-  let cloudCalls = 0, cloudClosed = 0;
-  const factory = async () => { cloudCalls++; return { status: () => ({ provider: 'chatgpt', connected: true }), close: async () => { cloudClosed++; } }; };
-  const assistant = await createDesktopAssistant({ dataDir, cloudFactory: factory, localCheck: async () => ({ connected: false, message: 'Ollama unavailable' }) });
-  assert.equal(assistant.status().provider, 'chatgpt'); await assistant.begin({ provider: 'local' }); assert.equal(assistant.status().provider, 'ollama'); assert.equal(assistant.status().connected, false); assert.equal(await assistant.credentials(), null); assert.equal(cloudCalls, 1); assert.equal(cloudClosed, 1); await assistant.close();
-  assert.equal(await readFile(join(dataDir, 'assistant-provider.dpapi'), 'utf8'), grant);
-  const restarted = await createDesktopAssistant({ dataDir, cloudFactory: async () => { throw Error('cloud forbidden'); }, localCheck: async () => ({ connected: false }) }); t.after(() => restarted.close()); assert.equal(restarted.status().provider, 'ollama');
-});
-
-test('unreadable old cloud storage does not prevent choosing local', async t => {
-  const dataDir = await directory(t); await writeFile(join(dataDir, 'host-setup.json'), '{"completed":true}');
-  const assistant = await createDesktopAssistant({ dataDir, cloudFactory: async () => { throw new Error('protected store unavailable'); }, localCheck: async () => ({ connected: true }) }); t.after(() => assistant.close());
-  await assistant.begin({ provider: 'local' }); assert.equal(assistant.status().connected, true); assert.equal(assistant.status().provider, 'ollama');
 });
 
 test('real bundled Hermes uses the pinned local adapter and resumes private history without cloud credentials', { skip: !existsSync(python), timeout: 70000 }, async t => {

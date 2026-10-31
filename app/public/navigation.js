@@ -60,7 +60,7 @@
     node.addEventListener('click', shut); parent.append(node); return node;
   }
   const nav = make('nav', '', 'nemo-primary-nav'); nav.setAttribute('aria-label', 'Main navigation'); menu.dialog.append(nav);
-  for (const [text, href] of [['Chat', '/'], ['History', '/history.html'], ['Memory', '/memory.html'], ['Tasks', '/tasks.html'], ['Reminders', '/leave.html']]) link(text, href, nav);
+  for (const [text, href] of [['Chat', '/'], ['History', '/history.html'], ['Tasks', '/tasks.html'], ['Reminders', '/leave.html']]) link(text, href, nav);
   const extras = make('div', '', 'nemo-nav-section'); menu.dialog.append(extras);
   const accounts = document.getElementById('integrationsButton');
   if (accounts) {
