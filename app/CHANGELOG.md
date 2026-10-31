@@ -82,5 +82,7 @@ offsite relay acceptance remain separate checks.
 - Require actual native, browser, runtime and MCP execution in candidate tests.
 - Keep the sealed runtime unchanged across native chat/history by disabling the
   unused background toolchain probe and suppressing descendant Python caches.
+- Share Family navigation's initial session lookup to prevent competing reads
+  from leaving the profile controls unavailable on first load.
 - Add scoped signing and immutable unpublished-draft delivery. A trusted signing
   identity, actual clean-PC installation/update and adult acceptance remain required.
