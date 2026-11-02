@@ -16,7 +16,7 @@ export function getProfileMemoryFetch(fetchImpl=window.nemoFetch||window.fetch.b
       if(result.status===409){let data;try{data=await result.clone().json();}catch{}if(data?.code==='PROFILE_CHANGED')throw new Error('The signed-in profile changed. Reload Memory before continuing.');}
       return result;
     };
-    bound.profile={id:profile.id,name:profile.name};return bound;
+    bound.profile={id:profile.id,name:profile.name};bound.memoryMode=session.memoryMode||'chat-history';return bound;
   })();
   return binding;
 }

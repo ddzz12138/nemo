@@ -50,14 +50,20 @@ export async function startDesktopHost({ dataDir, resourcesPath, openExternal = 
     } catch (error) { await next.close().catch(() => {}); throw error; }
   }
   async function restart() { if (closing) throw new Error('Nemo is closing.'); if (app) { await app.close(); app = null; } await startApp(); }
-  const close = () => closingTask ||= (async () => {
+  const close = () => {
+    if (closingTask) return closingTask;
+    const operation = (async () => {
     closing = true;
     const errors = [];
     for (const action of [() => remote?.close(), () => setup?.close(), () => changing, () => assistant?.close(), () => app?.close(), () => control?.close()]) {
       try { await action(); } catch (error) { errors.push(error); }
     }
     if (errors.length) throw new AggregateError(errors, 'Nemo stopped, but could not confirm every cleanup step.');
-  })();
+    })();
+    closingTask = operation;
+    void operation.catch(() => { if (closingTask === operation) closingTask = null; });
+    return operation;
+  };
   try {
     if (useProcessControl) control = await createProcessControl({ dataDir, onStop: () => { void close().catch(() => {}); } });
     await runtime.status();

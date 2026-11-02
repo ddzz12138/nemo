@@ -103,7 +103,7 @@ export function callConnectionTool(connections, name, args = {}) {
 
 // No mailbox/calendar/memory read occurs here. The consenting request exposes
 // only the three scoped reads, allowing Hermes to choose a relevant lookup.
-export function buildToolConnectionPrompt({ message, history = [], now = () => Date.now(), memoryEnabled = true }) {
+export function buildToolConnectionPrompt({ message, history = [], now = () => Date.now(), memoryEnabled = true, builtinMemory = false }) {
   const previous = history.slice(-8).map(item => ({ role: item.role, text: item.text.slice(0, 2000) }));
   const lines = [
     'Answer the current user question. The user has already allowed read-only calendar, Gmail and explicitly saved memory tools in Nemo Connections settings. Use relevant tools automatically without asking the user to enable them or grant permission again in chat.',
@@ -116,7 +116,11 @@ export function buildToolConnectionPrompt({ message, history = [], now = () => D
     `CHAT_HISTORY_JSON\n${stringifyConnectionData(previous)}\nEND_CHAT_HISTORY_JSON`,
     `USER_QUESTION_JSON\n${stringifyConnectionData(message)}\nEND_USER_QUESTION_JSON`,
   ];
-  if (!memoryEnabled) {
+  if (builtinMemory) {
+    lines[0] = 'Answer the current user question. This person already allowed their read-only calendar and Gmail tools in Nemo Settings. Use relevant tools without asking permission again. Hermes memory is automatic for this private profile.';
+    lines[2] = 'Use mcp__nemo__calendar_list for calendar questions and mcp__nemo__gmail_search with a relevant query for email questions. Do not read email for a calendar-only question. Never claim a source was checked unless its tool returned a result in this turn.';
+    lines[5] = 'Use the built-in memory tool according to its native instructions for this person’s private persistent notes. A successful memory write must actually complete before saying it was saved. Memory is not a live email or calendar source.';
+  } else if (!memoryEnabled) {
     lines[0] = 'Answer the current user question. This person already allowed their read-only calendar and Gmail tools in Nemo Settings. Use relevant tools automatically without asking permission again in chat.';
     lines[2] = 'Use mcp__nemo__calendar_list for this person’s calendar questions and mcp__nemo__gmail_search with a relevant query for their email questions. Do not read email for a calendar-only question. Never claim a source was checked unless its tool returned a result in this turn. Saved memory is not connected.';
     lines.splice(5, 1);

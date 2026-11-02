@@ -5,7 +5,34 @@ export const CHATGPT_USAGE_URL = 'https://chatgpt.com/settings/usage';
 const ENDPOINT = 'https://api.openai.com/v1/responses';
 const LOCAL_MODEL = 'nemo-chatgpt-plan';
 const MAX_BODY = 2_000_000;
-const TOOL_NAMES = new Set(['mcp__nemo__calendar_list', 'mcp__nemo__gmail_search', 'mcp__nemo__memory_search']);
+const TOOL_NAMES = new Set(['mcp__nemo__calendar_list', 'mcp__nemo__gmail_search', 'mcp__nemo__memory_search', 'memory']);
+const toolArgumentLimit = name => name === 'memory' ? 16_000 : 4000;
+const NATIVE_NAME = /^[A-Za-z_][A-Za-z0-9_-]{0,127}$/;
+const nativeArgumentLimit = 262_144;
+
+// Used only by the authenticated local owner's upstream Hermes workspace.
+// The ordinary family bridge retains its fixed tool allowlist below.
+function nativeNames(request) {
+  if (request.tools == null) return [];
+  if (!Array.isArray(request.tools) || request.tools.length > 256) throw chatgptPlanError();
+  const names = request.tools.map(tool => tool?.type === 'function' ? tool.function?.name : null);
+  if (names.some(name => typeof name !== 'string' || !NATIVE_NAME.test(name)) || new Set(names).size !== names.length) throw chatgptPlanError();
+  return names;
+}
+
+function nativeContent(value, role) {
+  if (typeof value === 'string' || value == null) return [{type: role === 'assistant' ? 'output_text' : 'input_text', text: contentText(value)}];
+  if (!Array.isArray(value) || value.length > 1000) throw chatgptPlanError();
+  return value.map(part => {
+    if (['text','input_text','output_text'].includes(part?.type)) return {type:role === 'assistant' ? 'output_text' : 'input_text',text:string(part.text)};
+    if (role === 'assistant' || !['image_url','input_image'].includes(part?.type)) throw chatgptPlanError();
+    const source = part.type === 'image_url' ? part.image_url?.url : part.image_url;
+    if (typeof source !== 'string' || source.length > 12_000_000 || !/^(?:https:\/\/|data:image\/(?:png|jpeg|webp|gif);base64,)/i.test(source)) throw chatgptPlanError();
+    const detail = part.type === 'image_url' ? part.image_url.detail : part.detail;
+    if (detail !== undefined && !['auto','low','high'].includes(detail)) throw chatgptPlanError();
+    return {type:'input_image',image_url:source,detail:detail || 'auto'};
+  });
+}
 const safeMessages = {
   CHATGPT_USAGE_LIMIT: 'Your ChatGPT usage limit was reached. Review your usage in ChatGPT settings.',
   CHATGPT_SIGN_IN_REQUIRED: 'Reconnect your ChatGPT account in Nemo to continue.',
@@ -40,45 +67,57 @@ function contentText(value) {
   }).join('\n');
 }
 
-// Only text and the existing, guarded client-side read tools cross this boundary.
+// Only text and explicitly approved, locally guarded tools cross this boundary.
 // All provider settings come from a new object, never a spread of Hermes input.
-export function toPlanRequest(request, model, allowedTools = []) {
+export function toPlanRequest(request, model, allowedTools = [], {nativeTools = false} = {}) {
   if (!request || typeof request !== 'object' || !Array.isArray(request.messages) || !request.messages.length || request.messages.length > 2000) throw chatgptPlanError();
-  const permitted = new Set(allowedTools);
-  if (permitted.size !== allowedTools.length || allowedTools.some(name => !TOOL_NAMES.has(name))) throw chatgptPlanError();
+  if (typeof nativeTools !== 'boolean') throw chatgptPlanError();
+  const permitted = new Set(nativeTools ? nativeNames(request) : allowedTools);
+  if (!nativeTools && (permitted.size !== allowedTools.length || allowedTools.some(name => !TOOL_NAMES.has(name)))) throw chatgptPlanError();
   const input = [];
   for (const message of request.messages) {
     if (!message || typeof message !== 'object') throw chatgptPlanError();
     const role = message.role;
     if (role === 'tool') {
-      input.push({ type: 'function_call_output', call_id: string(message.tool_call_id, 200), output: contentText(message.content) });
+      input.push({ type: 'function_call_output', call_id: string(message.tool_call_id, 200), output: nativeTools && Array.isArray(message.content) ? nativeContent(message.content,'tool') : contentText(message.content) });
       continue;
     }
     if (!['system', 'developer', 'user', 'assistant'].includes(role)) throw chatgptPlanError();
-    const text = contentText(message.content);
-    if (text) input.push({ type: 'message', role: role === 'system' ? 'developer' : role,
-      content: [{ type: role === 'assistant' ? 'output_text' : 'input_text', text }] });
+    if (nativeTools) {
+      const content = nativeContent(message.content,role);
+      if (content.some(part => part.type === 'input_image' || part.text)) input.push({type:'message',role:role === 'system' ? 'developer' : role,content});
+    } else {
+      const text = contentText(message.content);
+      if (text) input.push({ type: 'message', role: role === 'system' ? 'developer' : role,
+        content: [{ type: role === 'assistant' ? 'output_text' : 'input_text', text }] });
+    }
     if (message.tool_calls !== undefined) {
-      if (role !== 'assistant' || !Array.isArray(message.tool_calls) || message.tool_calls.length > 6) throw chatgptPlanError();
+      if (role !== 'assistant' || !Array.isArray(message.tool_calls) || message.tool_calls.length > (nativeTools ? 64 : 6)) throw chatgptPlanError();
       for (const call of message.tool_calls) {
-        if (call?.type !== 'function' || !permitted.has(call.function?.name)) throw chatgptPlanError();
+        if (call?.type !== 'function' || !(nativeTools ? NATIVE_NAME.test(call.function?.name || '') : permitted.has(call.function?.name))) throw chatgptPlanError();
         input.push({ type: 'function_call', call_id: string(call.id, 200), name: call.function.name,
-          namespace: 'nemo', arguments: string(call.function.arguments, 4000) });
+          namespace: 'nemo', arguments: string(call.function.arguments, nativeTools ? nativeArgumentLimit : toolArgumentLimit(call.function.name)) });
       }
     }
   }
   if (!input.length) throw chatgptPlanError();
   const result = { model: string(model, 200), input, store: false, stream: true };
   if (request.tools !== undefined && request.tools !== null) {
-    if (!Array.isArray(request.tools) || request.tools.length > 3) throw chatgptPlanError();
+    if (!Array.isArray(request.tools) || request.tools.length > (nativeTools ? 256 : 4)) throw chatgptPlanError();
     const seen = new Set();
     const tools = request.tools.map(tool => {
       const fn = tool?.function;
-      if (tool?.type !== 'function' || !fn || !permitted.has(fn.name) || seen.has(fn.name) || !fn.parameters || typeof fn.parameters !== 'object') throw chatgptPlanError();
+      if (tool?.type !== 'function' || !fn || !permitted.has(fn.name) || seen.has(fn.name) || !fn.parameters || typeof fn.parameters !== 'object' || Array.isArray(fn.parameters)) throw chatgptPlanError();
       seen.add(fn.name);
       return { type: 'function', name: fn.name, description: typeof fn.description === 'string' ? fn.description.slice(0, 20_000) : '', parameters: fn.parameters, strict: false };
     });
-    if (tools.length) result.tools = [{ type: 'namespace', name: 'nemo', description: 'The person’s explicitly enabled Nemo read tools.', tools }];
+    if (tools.length) result.tools = [{ type: 'namespace', name: 'nemo', description: nativeTools ? 'The local owner’s native Hermes tools.' : 'The person’s permitted Nemo tools and private Hermes memory.', tools }];
+  }
+  if(nativeTools && request.parallel_tool_calls !== undefined){if(typeof request.parallel_tool_calls!=='boolean')throw chatgptPlanError();result.parallel_tool_calls=request.parallel_tool_calls;}
+  if(nativeTools && request.tool_choice !== undefined){
+    if(['auto','none','required'].includes(request.tool_choice))result.tool_choice=request.tool_choice;
+    else if(request.tool_choice?.type==='function'&&permitted.has(request.tool_choice.function?.name))result.tool_choice={type:'function',name:request.tool_choice.function.name,namespace:'nemo'};
+    else throw chatgptPlanError();
   }
   return result;
 }
@@ -158,7 +197,7 @@ export async function completedPlanResponse(response) {
   } finally { await reader.cancel().catch(() => {}); }
 }
 
-export function toHermesCompletion(response, allowedTools = []) {
+export function toHermesCompletion(response, allowedTools = [], {nativeTools = false} = {}) {
   const text = [], calls = [];
   for (const output of response.output) {
     if (output?.type === 'message') {
@@ -168,8 +207,8 @@ export function toHermesCompletion(response, allowedTools = []) {
         else if (part.type === 'refusal') text.push(string(part.refusal));
       }
     } else if (output?.type === 'function_call') {
-      if (!allowedTools.includes(output.name) || output.namespace && output.namespace !== 'nemo' || calls.length >= 6) throw chatgptPlanError();
-      calls.push({ id: string(output.call_id, 200), type: 'function', function: { name: output.name, arguments: string(output.arguments, 4000) } });
+      if (!allowedTools.includes(output.name) || output.namespace && output.namespace !== 'nemo' || calls.length >= (nativeTools ? 64 : 6)) throw chatgptPlanError();
+      calls.push({ id: string(output.call_id, 200), type: 'function', function: { name: output.name, arguments: string(output.arguments, nativeTools ? nativeArgumentLimit : toolArgumentLimit(output.name)) } });
     } else if (output?.type !== 'reasoning') throw chatgptPlanError();
   }
   if (!text.length && !calls.length) throw chatgptPlanError();
@@ -181,11 +220,12 @@ export function toHermesCompletion(response, allowedTools = []) {
 }
 
 /** Per-run adapter. The real OAuth credential never enters Hermes or its child tools. */
-export async function createChatGPTPlanBroker({ session, allowedTools = [], fetchImpl = fetch, signal, timeoutMs = 100_000, onFailure = () => {} } = {}) {
+export async function createChatGPTPlanBroker({ session, allowedTools = [], nativeTools = false, authorize = async () => true, fetchImpl = fetch, signal, timeoutMs = 100_000, onFailure = () => {} } = {}) {
+  if(typeof nativeTools!=='boolean'||typeof authorize!=='function')throw chatgptPlanError();
   if (session?.provider !== 'chatgpt' || typeof session.accessToken !== 'string' || session.accessToken.length < 16 || session.accessToken.length > 20_000 || /[\r\n\0]/.test(session.accessToken) || typeof session.model !== 'string' || !session.model || /[\r\n\0]/.test(session.model)) throw chatgptPlanError('CHATGPT_SIGN_IN_REQUIRED');
   const capability = randomBytes(32).toString('base64url'), controller = new AbortController();
   const liveSignal = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal;
-  let authority = '', origin = '', failure = null, requests = 0, active = false, closing = false;
+  let authority = '', origin = '', failure = null, requests = 0, active = 0, closing = false;
   const fail = error => { failure ||= error?.code && Object.hasOwn(safeMessages, error.code) ? error : chatgptPlanError(); onFailure(failure); return failure; };
   const server = http.createServer(async (request, response) => {
     response.setHeader('cache-control', 'no-store');
@@ -195,16 +235,18 @@ export async function createChatGPTPlanBroker({ session, allowedTools = [], fetc
     if (request.headers.host !== authority || !['127.0.0.1', '::ffff:127.0.0.1'].includes(request.socket.remoteAddress) || request.headers.origin && request.headers.origin !== origin || actual.length !== expected.length || !timingSafeEqual(actual, expected)) return send(403, { error: { message: 'Private Nemo assistant connection required.' } });
     if (request.method === 'GET' && request.url === '/v1/models') return send(200, { data: [{ id: LOCAL_MODEL, object: 'model', context_length: 131072 }] });
     if (request.method !== 'POST' || request.url !== '/v1/chat/completions') return send(404, { error: { message: 'This assistant action is unavailable.' } });
-    if (closing || failure || active || requests >= 12) return send(503, { error: { message: 'This assistant request is unavailable.' } });
-    active = true; requests++;
+    if (closing || failure || active >= (nativeTools ? 8 : 1) || requests >= (nativeTools ? 512 : 12)) return send(503, { error: { message: 'This assistant request is unavailable.' } });
+    active++; requests++;
     try {
       const chunks = []; let size = 0;
-      for await (const chunk of request) { size += chunk.length; if (size > MAX_BODY) throw chatgptPlanError(); chunks.push(chunk); }
+      for await (const chunk of request) { size += chunk.length; if (size > (nativeTools ? 16_000_000 : MAX_BODY)) throw chatgptPlanError(); chunks.push(chunk); }
       const payload = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-      const body = toPlanRequest(payload, session.model, allowedTools);
+      if(!await authorize())throw chatgptPlanError('CHATGPT_SIGN_IN_REQUIRED');
+      const body = toPlanRequest(payload, session.model, allowedTools, {nativeTools});
       const remote = await fetchImpl(ENDPOINT, { method: 'POST', redirect: 'error', signal: AbortSignal.any([liveSignal, AbortSignal.timeout(timeoutMs)]),
         headers: { Authorization: 'Bearer ' + session.accessToken, 'Content-Type': 'application/json', Accept: 'text/event-stream' }, body: JSON.stringify(body) });
-      const completion = toHermesCompletion(await completedPlanResponse(remote), allowedTools);
+      const completion = toHermesCompletion(await completedPlanResponse(remote), nativeTools ? nativeNames(payload) : allowedTools, {nativeTools});
+      if(!await authorize())throw chatgptPlanError('CHATGPT_SIGN_IN_REQUIRED');
       if (payload.stream === true) {
         response.writeHead(200, { 'content-type': 'text/event-stream' });
         const choice = completion.choices[0], message = choice.message;
@@ -214,7 +256,7 @@ export async function createChatGPTPlanBroker({ session, allowedTools = [], fetc
     } catch (error) {
       const safe = fail(error);
       send(503, { error: { code: safe.code, message: safe.message } });
-    } finally { active = false; }
+    } finally { active--; }
   });
   server.requestTimeout = 110_000; server.headersTimeout = 10_000; server.maxHeadersCount = 30;
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });

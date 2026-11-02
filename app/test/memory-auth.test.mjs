@@ -52,3 +52,8 @@ test('Memory reuses the navigation identity loader while preserving profile pinn
  await bound('/api/memory/board');assert.equal(requests,1);f.window.NemoIdentity.profile=B;
  await assert.rejects(bound('/api/memory/board'),/profile changed/);assert.equal(requests,1);
 });
+
+test('Memory retains the native session mode without another identity request',async()=>{
+ let requests=0;const f=fixture(async path=>{requests++;assert.equal(path,'/api/session');return Response.json({authenticated:true,profile:A,memoryMode:'profile-hermes'});});
+ const bound=await f.bind();assert.equal(bound.memoryMode,'profile-hermes');assert.equal(bound.profile.id,A.id);assert.equal(requests,1);
+});

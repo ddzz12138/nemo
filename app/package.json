@@ -1,6 +1,6 @@
 {
   "name": "nemo-local-agent",
-  "version": "0.3.0-alpha.18",
+  "version": "0.3.0-alpha.19",
   "private": true,
   "type": "module",
   "main": "desktop/main.cjs",
@@ -47,6 +47,8 @@
     "connect:gmail": "node scripts/connect-gmail.mjs",
     "mcp": "node mcp-server.mjs",
     "desktop": "electron-forge start",
+    "preview:assistant": "node scripts/preview-assistant.mjs",
+    "prepare:hermes-workspace": "node scripts/prepare-hermes-workspace-runtime.mjs",
     "desktop:interface:build": "node desktop/interface/build.mjs",
     "desktop:bootstrap": "node node_modules/electron/install.js",
     "desktop:prepare": "node scripts/prepare-desktop-runtime.mjs",

@@ -148,6 +148,7 @@ _MCP_PARAMETERS[CONNECTION_TOOL_NAMES[1]]["anyOf"] = [{"required": ["query"]}, {
 _MCP_PARAMETERS[CONNECTION_TOOL_NAMES[1]]["not"] = {
     "anyOf": [{"required": ["cursor", "query"]}, {"required": ["cursor", "limit"]}]}
 MAX_TOOL_CALLS = 6
+_BUILTIN_MEMORY_PARAMETERS = None
 _ISO_QUERY = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.[0-9]{1,3})?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])")
 _OPAQUE_ID = re.compile(r"[a-f0-9]{64}")
 
@@ -199,6 +200,8 @@ def emit_policy_error(stage, error, agent=None, event_sink=None):
 
 def validate_tool_arguments(name, arguments):
     """Validate the exact read-only schemas again at the execution boundary."""
+    if name == "memory" and _BUILTIN_MEMORY_PARAMETERS is not None and name in CONNECTION_TOOL_NAMES:
+        return validate_memory_arguments(arguments)
     if name not in CONNECTION_TOOL_NAMES or type(arguments) is not dict:
         raise ToolPolicyError("Nemo blocked an unapproved tool or argument shape.")
     calendar = name == "mcp__nemo__calendar_list"
@@ -238,6 +241,135 @@ def validate_tool_arguments(name, arguments):
         if type(cursor) is not str or _OPAQUE_ID.fullmatch(cursor) is None or "query" in arguments or "limit" in arguments:
             raise ToolPolicyError("Nemo blocked an invalid Gmail continuation cursor.")
     return arguments
+
+
+def validate_memory_arguments(arguments):
+    """Bound the pinned native memory operation without adding paths or a new store."""
+    if (type(arguments) is not dict or set(arguments) - {"target", "action", "content", "old_text", "new_text", "operations"}
+            or arguments.get("target") not in ("memory", "user")):
+        raise ToolPolicyError("Nemo blocked malformed memory arguments.")
+    operations = arguments.get("operations")
+    if operations is not None:
+        if (set(arguments) != {"target", "operations"} or type(operations) is not list
+                or not 1 <= len(operations) <= 16):
+            raise ToolPolicyError("Nemo blocked malformed memory batch.")
+    else:
+        operations = [{key: value for key, value in arguments.items() if key != "target"}]
+    for operation in operations:
+        if (type(operation) is not dict or set(operation) - {"action", "content", "old_text", "new_text"}
+                or operation.get("action") not in ("add", "replace", "remove")):
+            raise ToolPolicyError("Nemo blocked an unsupported memory operation.")
+        for key in ("content", "new_text", "old_text"):
+            if key in operation and (type(operation[key]) is not str or len(operation[key]) > 2200 or "\x00" in operation[key]):
+                raise ToolPolicyError("Nemo blocked oversized memory content.")
+        if operation["action"] in ("add", "replace") and not (operation.get("content") or operation.get("new_text") or "").strip():
+            raise ToolPolicyError("Nemo requires memory content.")
+        if operation["action"] in ("replace", "remove") and not (operation.get("old_text") or "").strip():
+            raise ToolPolicyError("Nemo requires an existing memory entry.")
+    return arguments
+
+
+def _builtin_memory_context(*, required=False):
+    """Bind agent state to the current authenticated Nemo person on every seam.
+
+    Nemo profile -> private Hermes home -> native MEMORY.md / USER.md
+                 -> native session DB; never the global runtime/config home.
+    """
+    value = os.environ.get("NEMO_BUILTIN_MEMORY_HOME")
+    mode = os.environ.get("NEMO_BUILTIN_MEMORY")
+    if value is None:
+        if required or mode is not None:
+            raise ToolPolicyError("Nemo private memory context is missing.")
+        return None
+    if mode not in ("profile", "denied") or os.environ.get("NEMO_MCP_POLICY") != "family":
+        raise ToolPolicyError("Nemo private memory policy is invalid.")
+    route = managed_model_route()
+    if route is None or route["local"]:
+        raise ToolPolicyError("Nemo native memory requires its ChatGPT connection.")
+    profile_id = os.environ.get("NEMO_MCP_PROFILE_ID", "")
+    profile_data, root = profile_mcp_context(os.environ.get("NEMO_MCP_DATA_DIR"),
+                                           os.environ.get("NEMO_MCP_CONFIG_DIR"), profile_id)
+    home = Path(value)
+    expected = Path(profile_data) / "hermes"
+    if (not home.is_absolute() or home.resolve() != expected.resolve()
+            or Path(os.environ.get("HERMES_HOME", "")).resolve() != expected.resolve()):
+        raise ToolPolicyError("Nemo private memory workspace changed.")
+    # A local application directory alias is allowed by profile_mcp_context;
+    # a substituted profile/home/file is never an alias to trust.
+    paths = [Path(profile_data).parent, Path(profile_data), home, home / "nemo-profile.json"]
+    paths.extend(path for path in (home / "config.yaml", home / "memories", home / "memories" / "MEMORY.md", home / "memories" / "USER.md", home / "memories" / "MEMORY.md.lock", home / "memories" / "USER.md.lock") if path.exists() or path.is_symlink())
+    for path in paths:
+        info = path.lstat()
+        if (stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+            raise ToolPolicyError("Nemo private memory path is linked.")
+        is_directory = path in (Path(profile_data).parent, Path(profile_data), home, home / "memories")
+        if not (stat.S_ISDIR(info.st_mode) if is_directory else stat.S_ISREG(info.st_mode)):
+            raise ToolPolicyError("Nemo private memory path is invalid.")
+    marker = json.loads((home / "nemo-profile.json").read_text(encoding="utf-8"))
+    if marker != {"version": 1, "profileId": profile_id} or type(marker.get("version")) is not int:
+        raise ToolPolicyError("Nemo private memory owner changed.")
+    registry_path = Path(root) / "profiles.json"
+    registry_info = registry_path.lstat()
+    if (not stat.S_ISREG(registry_info.st_mode) or registry_info.st_size > 2_000_000
+            or getattr(registry_info, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+        raise ToolPolicyError("Nemo profile registry is invalid.")
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    profiles = registry.get("profiles")
+    if registry.get("version") != 2 or type(profiles) is not list:
+        raise ToolPolicyError("Nemo profile registry is invalid.")
+    current = next((profile for profile in profiles if type(profile) is dict and profile.get("id") == profile_id), None)
+    if not current or current.get("disabled"):
+        raise ToolPolicyError("Nemo private memory profile is unavailable.")
+    stamp = f'{current.get("policyRevision", 0)}:{current.get("childModeRevision", 0)}:{str(current.get("childMode") is True).lower()}'
+    if os.environ.get("NEMO_MCP_PERMISSION_REVISION") != stamp:
+        raise ToolPolicyError("Nemo private memory permission changed.")
+    child = current.get("role") != "owner" and (current.get("childMode") is True or current.get("classification") == "child")
+    permitted = not child or current.get("capabilityGrants", {}).get("memory") is True
+    state_path = home / "nemo-memory-state.json"
+    if state_path.exists() or state_path.is_symlink():
+        state_info = state_path.lstat()
+        if (not stat.S_ISREG(state_info.st_mode) or state_info.st_size > 4096
+                or getattr(state_info, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+            raise ToolPolicyError("Nemo private memory source state is invalid.")
+        source_state = json.loads(state_path.read_text(encoding="utf-8"))
+        sources = source_state.get("sources")
+        if (set(source_state) != {"version", "sources"} or type(source_state.get("version")) is not int or source_state.get("version") != 1
+                or type(sources) is not dict or set(sources) != {"gmail", "calendar"}
+                or any(type(value) is not bool for value in sources.values())):
+            raise ToolPolicyError("Nemo private memory source state is invalid.")
+        if child and any(exposed and current.get("capabilityGrants", {}).get(source) is not True for source, exposed in sources.items()):
+            permitted = False
+    elif child and any(current.get("capabilityGrants", {}).get(source) is not True for source in ("gmail", "calendar")):
+        permitted = False
+    if mode == "profile" and not permitted:
+        raise ToolPolicyError("Nemo private memory permission changed.")
+    if required and mode != "profile":
+        raise ToolPolicyError("Nemo private memory permission is required.")
+    return home
+
+
+def builtin_memory_context(*, required=False):
+    try:
+        return _builtin_memory_context(required=required)
+    except (OSError, ValueError, TypeError, AttributeError):
+        raise ToolPolicyError("Nemo private memory context could not be verified.") from None
+
+
+def prepare_builtin_memory():
+    """Use the vendored native schema; do not copy its behavior into Nemo."""
+    global _BUILTIN_MEMORY_PARAMETERS
+    home = builtin_memory_context(required=True)
+    from tools.memory_tool import MEMORY_SCHEMA, get_memory_dir
+    if get_memory_dir().resolve() != (home / "memories").resolve():
+        raise ToolPolicyError("Hermes native memory workspace changed.")
+    from tools.registry import registry
+    entry = registry.get_entry("memory")
+    if (entry is None or entry.toolset != "memory" or entry.handler.__module__ != "tools.memory_tool"
+            or entry.schema != MEMORY_SCHEMA or MEMORY_SCHEMA.get("name") != "memory"):
+        raise ToolPolicyError("Hermes native memory registration changed.")
+    _BUILTIN_MEMORY_PARAMETERS = copy.deepcopy(MEMORY_SCHEMA["parameters"])
+    _PARAMETERS["memory"] = copy.deepcopy(_BUILTIN_MEMORY_PARAMETERS)
+    return "memory"
 
 
 def _schema_name(tool, *, provider=False):
@@ -516,6 +648,7 @@ def install_guard(agent_class, helpers, allowed_tools=(), event_sink=None, max_t
     if allowed_tools and not connections:
         raise ToolPolicyError("Nemo tool policy is not an approved mode.")
     check = assert_connection_tools if connections else assert_no_tools
+    builtin_memory = "memory" in allowed_tools
     original_init = agent_class.__init__
     original_turn = agent_class.run_conversation
     original_call = agent_class._interruptible_api_call
@@ -526,10 +659,25 @@ def install_guard(agent_class, helpers, allowed_tools=(), event_sink=None, max_t
 
     def verified(stage, self, api_kwargs=_NO_REQUEST):
         try:
+            if os.environ.get("NEMO_BUILTIN_MEMORY_HOME") is not None:
+                builtin_memory_context(required=builtin_memory)
             expected = getattr(self, "_nemo_child_instruction", None)
             if expected and not getattr(self, "ephemeral_system_prompt", "").endswith(expected):
                 raise ToolPolicyError("Nemo learning policy changed.")
             check(self, api_kwargs)
+            if builtin_memory and (getattr(self, "_memory_store", None) is None
+                    or getattr(self, "_memory_enabled", None) is not True
+                    or getattr(self, "_user_profile_enabled", None) is not True
+                    or getattr(self, "_memory_manager", None) is not None
+                    or self._memory_store.memory_char_limit != 2200
+                    or self._memory_store.user_char_limit != 1375):
+                raise ToolPolicyError("Hermes native memory store changed.")
+            if os.environ.get("NEMO_BUILTIN_MEMORY_HOME") is not None and not builtin_memory and (
+                    getattr(self, "_memory_store", None) is not None
+                    or getattr(self, "_memory_enabled", False)
+                    or getattr(self, "_user_profile_enabled", False)
+                    or getattr(self, "_memory_manager", None) is not None):
+                raise ToolPolicyError("Hermes loaded memory without permission.")
             route = managed_model_route()
             if route is not None and (getattr(self, "base_url", "").rstrip("/") != route["base_url"]
                     or getattr(self, "api_key", None) != route["api_key"]
@@ -543,6 +691,8 @@ def install_guard(agent_class, helpers, allowed_tools=(), event_sink=None, max_t
 
     def guarded_init(self, *args, **kwargs):
         try:
+            if os.environ.get("NEMO_BUILTIN_MEMORY_HOME") is not None:
+                builtin_memory_context(required=builtin_memory)
             route = managed_model_route()
             if route is not None:
                 overrides = {"base_url": route["base_url"], "api_key": route["api_key"],
@@ -563,6 +713,12 @@ def install_guard(agent_class, helpers, allowed_tools=(), event_sink=None, max_t
                     if key not in inspect.signature(original_init).parameters:
                         raise ToolPolicyError("Hermes profile isolation seam changed.")
                     kwargs[key] = True
+                if builtin_memory:
+                    # skip_memory still prevents external memory providers; the explicit
+                    # native toolset initializes only MEMORY.md / USER.md in pinned Hermes.
+                    if "enabled_toolsets" not in inspect.signature(original_init).parameters:
+                        raise ToolPolicyError("Hermes native memory seam changed.")
+                    kwargs["enabled_toolsets"] = (["nemo"] if os.environ.get("NEMO_HERMES_MODE") == "connections" else []) + ["memory"]
                 if learning_policy not in ("standard-v1", "child-v1"):
                     raise ToolPolicyError("Unknown Nemo learning policy.")
                 if learning_policy == "child-v1":
@@ -588,8 +744,10 @@ def install_guard(agent_class, helpers, allowed_tools=(), event_sink=None, max_t
         verified("init", self)
         self._skip_mcp_refresh = True
         self._nemo_tool_count = 0
-        proof = {"type": "nemo_guard", "version": (4 if os.environ.get("NEMO_MCP_MEMORY") == "profile" else 3) if family else 2 if connections else 1,
+        proof = {"type": "nemo_guard", "version": 5 if builtin_memory else (4 if os.environ.get("NEMO_MCP_MEMORY") == "profile" else 3) if family else 2 if connections else 1,
                  "stage": "startup", "tools": list(allowed_tools)}
+        if builtin_memory:
+            proof["builtinMemory"] = True
         if family:
             proof["isolated"] = True
             proof["learningPolicy"] = learning_policy
@@ -624,6 +782,8 @@ def install_guard(agent_class, helpers, allowed_tools=(), event_sink=None, max_t
         raise ToolPolicyError("Nemo blocked agent tool execution in chat-only mode.")
 
     def guarded_execute(self, assistant_message, messages, effective_task_id, api_call_count=0):
+        if os.environ.get("NEMO_BUILTIN_MEMORY_HOME") is not None:
+            builtin_memory_context(required=builtin_memory)
         check(self)
         tool_calls = getattr(assistant_message, "tool_calls", None)
         if type(tool_calls) is not list or not tool_calls or self._nemo_tool_count + len(tool_calls) > max_tool_calls:
@@ -633,7 +793,7 @@ def install_guard(agent_class, helpers, allowed_tools=(), event_sink=None, max_t
         for call in tool_calls:
             function = getattr(call, "function", None)
             raw = getattr(function, "arguments", None)
-            if type(raw) is not str or len(raw) > 4000:
+            if type(raw) is not str or len(raw) > (16000 if getattr(function, "name", None) == "memory" and builtin_memory else 4000):
                 raise ToolPolicyError("Nemo blocked malformed tool arguments.")
             try:
                 arguments = json.loads(raw)
@@ -679,6 +839,11 @@ def main():
     if mode not in {"chat-only", "connections"}:
         raise ToolPolicyError("Nemo tool mode is invalid.")
     allowed_tools = prepare_mcp_connections() if mode == "connections" else ()
+    if os.environ.get("NEMO_BUILTIN_MEMORY_HOME") is not None:
+        builtin_memory_context()
+        if os.environ.get("NEMO_BUILTIN_MEMORY") == "profile":
+            allowed_tools = (*allowed_tools, prepare_builtin_memory())
+            CONNECTION_TOOL_NAMES = allowed_tools
     if mode == "chat-only":
         isolate_mcp_configuration({})
     else:

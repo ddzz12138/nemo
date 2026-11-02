@@ -7,10 +7,27 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const { randomUUID, createHash } = require('node:crypto');
 const http = require('node:http');
+const { errorMonitor } = require('node:events');
 const { chatLaunch } = require('../../desktop/chat-contracts.cjs');
 const { openDesktopStartup } = require('../../desktop/startup.cjs');
 const { PERSONAL_PARTITION, persistPersonalSession } = require('../../desktop/session.cjs');
 const directory = path.resolve(process.argv[2]), mode = process.argv[3];
+// Observe real child-process lifecycle only. Never replace DPAPI, inspect its
+// input/output, or print arguments/paths. This distinguishes a bounded process
+// timeout from an ordinary nonzero protect/unprotect exit on Windows CI.
+const protectionProcesses = [];
+const protectionChannel = require('node:diagnostics_channel').channel('child_process');
+const safeCode = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(value) ? value : undefined;
+function observeProtection({ process: child }) {
+  const started = Date.now();
+  let observed;
+  const isProtection = () => typeof child.spawnfile === 'string' && path.basename(child.spawnfile).toLowerCase() === 'powershell.exe';
+  const record = () => observed ||= (protectionProcesses.push({ elapsedMs: 0 }), protectionProcesses.at(-1));
+  child.once('spawn', () => { if (isProtection()) record(); });
+  child.once(errorMonitor, error => { if (isProtection()) Object.assign(record(), { errorCode: safeCode(error.code), elapsedMs: Date.now() - started }); });
+  child.once('close', (code, signal) => { if (isProtection()) Object.assign(record(), { exitCode: Number.isInteger(code) ? code : null, signal: safeCode(signal), killed: child.killed === true, elapsedMs: Date.now() - started }); });
+}
+protectionChannel.subscribe(observeProtection);
 const applicationVersion = process.argv[4] || 'baseline';
 if (!/^[a-z0-9.-]{1,50}$/i.test(applicationVersion)) throw new Error('Use a synthetic app version.');
 const programDirectory = path.join(directory, 'program', 'app-' + applicationVersion);
@@ -95,4 +112,4 @@ app.whenReady().then(async () => {
     result = { ...result, before: before.authenticated, page, authenticated: current.authenticated, role: current.profile?.role, savedHistory, newInvitations, newDevices: (await host.profiles.devices(owner.id)).length - devicesBefore, protectedAccountsPreserved, protectedAccountsUnlocked, applicationVersion, programDirectory, dataDir, userData: app.getPath('userData'), synthetic: true };
   }
   writeFileSync(path.join(directory, mode + '.json'), JSON.stringify(result, null, 2));
-}).catch(error => { process.exitCode = 1; writeFileSync(path.join(directory, mode + '.json'), JSON.stringify({ ok: false, error: error.message })); }).finally(async () => { await personalStorage?.close(); window?.destroy(); await host?.close(); if (setup) await new Promise(done => setup.close(done)); app.quit(); });
+}).catch(error => { process.exitCode = 1; writeFileSync(path.join(directory, mode + '.json'), JSON.stringify({ ok: false, error: error.message, protectionProcesses })); }).finally(async () => { protectionChannel.unsubscribe(observeProtection); await personalStorage?.close(); window?.destroy(); await host?.close(); if (setup) await new Promise(done => setup.close(done)); app.quit(); });

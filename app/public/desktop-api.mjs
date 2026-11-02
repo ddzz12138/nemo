@@ -12,7 +12,7 @@ export function createDesktopApi({ fetchImpl, getProfile, getEpoch = () => 0 }) 
     if (!publicRequest && !profile?.id) throw Object.assign(new Error('Connect your own Nemo profile first.'), { status: 401 });
     const controller = new AbortController();
     const memoryWrite = input !== undefined && /^\/api\/memory\/(?:enable|notes|edit|delete|learning)(?:\/|$)/.test(path);
-    const timer = setTimeout(() => controller.abort(), memoryWrite ? 180_000 : 15_000);
+    const timer = setTimeout(() => controller.abort(), memoryWrite || path === '/api/hermes-workspace/start' ? 180_000 : 15_000);
     try {
       const response = await fetchImpl(path, {
         method: input === undefined ? 'GET' : 'POST', credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: controller.signal,
@@ -32,6 +32,12 @@ export function createDesktopApi({ fetchImpl, getProfile, getEpoch = () => 0 }) 
   return {
     request,
     session: () => request('/api/session'),
+    hermesWorkspaceStatus: () => request('/api/hermes-workspace/status'),
+    hermesWorkspaceStart: () => request('/api/hermes-workspace/start',{}),
+    hermesWorkspacePrepare: () => request('/api/hermes-workspace/prepare',{}),
+    hermesWorkspacePrompt: input => request('/api/hermes-workspace/prompt',input),
+    hermesWorkspaceRespond: input => request('/api/hermes-workspace/respond',input),
+    hermesWorkspaceStop: () => request('/api/hermes-workspace/stop',{}),
     conversation: () => request('/api/conversation'),
     history: () => request('/api/history'),
     savedConversation: id => request('/api/history/' + identified(id)),

@@ -1,5 +1,9 @@
 # Questions and checklists
 
+This document describes the scoped family-native preview, separate from the
+[local-owner Hermes workspace](HERMES_WORKSPACE.md). The owner workspace uses
+Hermes’s own tools and approvals with the owner’s operating-system access.
+
 Native chat reuses Hermes's `clarify` and `todo_list` implementations. These are
 conversation features: they do not grant access to an inbox, source cache, files,
 terminal, browser, purchases or external actions. They also work in child chat

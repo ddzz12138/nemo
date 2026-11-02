@@ -22,7 +22,8 @@ export async function createNemoServer(options = {}) {
   }
   try {
     const app = await createFamilyServer({ dataDir: config.dataDir, publicOrigin: config.publicOrigin, phoneLinkFactory: createPhoneLink, publicDir: join(ROOT, 'public'), ...options,
-      hermesOptions, nativeFactory: options.provider ? options.nativeFactory : null, memoryFactory: options.provider ? options.memoryFactory : null });
+      hermesOptions, nativeFactory: options.provider ? options.nativeFactory : null, memoryFactory: options.provider ? options.memoryFactory : null,
+      builtinMemory: options.provider ? options.builtinMemory === true : true });
     const close = app.close;
     app.close = async () => { try { await close(); } finally { await assistant?.close(); } };
     return app;

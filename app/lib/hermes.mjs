@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, lstatSync, realpathSync } from 'node:fs';
 import { join, resolve, isAbsolute, dirname, basename } from 'node:path';
 import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
@@ -10,16 +10,17 @@ import { createChatGPTPlanBroker, chatgptPlanError, CHATGPT_USAGE_URL } from './
 import { createLocalOllamaBroker, checkLocalOllama, localError, LOCAL_OLLAMA } from './local-ollama.mjs';
 
 const guardPath = fileURLToPath(new URL('./hermes_guard.py', import.meta.url));
+const memoryBridgePath = fileURLToPath(new URL('./hermes_memory.py', import.meta.url));
 const cliEntry = "runpy.run_module('hermes_cli.main', run_name='__main__', alter_sys=True)";
 export const HERMES_CONNECTION_TOOLS = Object.freeze(['mcp__nemo__calendar_list', 'mcp__nemo__gmail_search', 'mcp__nemo__memory_search']);
 
 // The browser chooses consent, never tool names, executable paths or CLI flags.
-export function configureHermesCommand(runtime, useIntegrations = false) {
-  if (typeof useIntegrations !== 'boolean') throw new Error('Invalid connection choice.');
+export function configureHermesCommand(runtime, useIntegrations = false, builtinMemory = false) {
+  if (typeof useIntegrations !== 'boolean' || typeof builtinMemory !== 'boolean') throw new Error('Invalid connection choice.');
   const argv = [...runtime];
   for (const [flag, expected, replacement] of [
-    ['--toolsets', 'none', useIntegrations ? 'nemo' : 'none'],
-    ['--max-turns', '1', useIntegrations ? '8' : '1'],
+    ['--toolsets', 'none', builtinMemory ? useIntegrations ? 'nemo,memory' : 'memory' : useIntegrations ? 'nemo' : 'none'],
+    ['--max-turns', '1', useIntegrations || builtinMemory ? '8' : '1'],
   ]) {
     const index = argv.indexOf(flag);
     if (index < 5 || index !== argv.lastIndexOf(flag) || argv[index + 1] !== expected) throw new Error('Hermes CLI tool policy changed.');
@@ -28,10 +29,11 @@ export function configureHermesCommand(runtime, useIntegrations = false) {
   return argv;
 }
 
-export function createHermesEventPolicy(useIntegrations = false, { family = false, memoryEnabled = false, childMode, allowedConnectionTools } = {}) {
+export function createHermesEventPolicy(useIntegrations = false, { family = false, memoryEnabled = false, builtinMemory = false, childMode, allowedConnectionTools } = {}) {
+  if (typeof builtinMemory !== 'boolean' || builtinMemory && !family) throw new Error('A trusted private memory policy is required.');
   const full = [...HERMES_CONNECTION_TOOLS].slice(0, family && !memoryEnabled ? 2 : 3);
   if(allowedConnectionTools!==undefined&&(!family||!Array.isArray(allowedConnectionTools)||new Set(allowedConnectionTools).size!==allowedConnectionTools.length||allowedConnectionTools.some(name=>!full.includes('mcp__nemo__'+name))))throw new Error('A trusted connection tool selection is required.');
-  const allowed = useIntegrations ? allowedConnectionTools===undefined?full:full.filter(name=>allowedConnectionTools.includes(name.slice(11))) : [];
+  const allowed = [...(useIntegrations ? allowedConnectionTools===undefined?full:full.filter(name=>allowedConnectionTools.includes(name.slice(11))) : []), ...(builtinMemory ? ['memory'] : [])];
   let proof = false;
   let calls = 0;
   const pending = [];
@@ -45,7 +47,7 @@ export function createHermesEventPolicy(useIntegrations = false, { family = fals
         throw new Error(codes.includes(event.code) ? event.code : 'Hermes tool policy failed.');
       } else if (event.type === 'nemo_guard') {
         if (family && childMode !== undefined && event.learningPolicy !== (childMode ? 'child-v1' : 'standard-v1')) throw new Error('Hermes learning policy could not be verified.');
-        if (proof || event.version !== (family ? memoryEnabled ? 4 : 3 : useIntegrations ? 2 : 1) || (family && event.isolated !== true) || event.stage !== 'startup'
+        if (proof || event.version !== (builtinMemory ? 5 : family ? memoryEnabled ? 4 : 3 : useIntegrations ? 2 : 1) || (builtinMemory && event.builtinMemory !== true) || (family && event.isolated !== true) || event.stage !== 'startup'
           || !Array.isArray(event.tools) || JSON.stringify([...event.tools].sort()) !== JSON.stringify([...allowed].sort())) throw new Error('Hermes tool policy could not be verified.');
         proof = true;
       } else if (event.type === 'nemo_status') {
@@ -99,16 +101,38 @@ export function validateHermesResult(terminal) {
   return terminal;
 }
 
+function privateMemoryHomeMatches(home, dataDir, profileId) {
+  const logicalProfile = resolve(dataDir), logicalHome = resolve(home);
+  // Fixed command discovery may precede profile creation. Existing homes must
+  // prove their physical identity; only the configured root can be an alias.
+  if (!existsSync(logicalProfile) && !existsSync(logicalHome)) return logicalHome === resolve(logicalProfile, 'hermes');
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(profileId || '')
+      || basename(logicalProfile) !== profileId || basename(dirname(logicalProfile)) !== 'profiles') return false;
+  try {
+    // The JS realpath implementation can retain Windows 8.3 spellings. Use
+    // the same native canonicalization as fs.promises.realpath in provisioning.
+    const canonical = process.platform === 'win32' ? realpathSync.native : realpathSync;
+    const root = canonical(dirname(dirname(logicalProfile))), physicalProfile = join(root, 'profiles', profileId), physicalHome = join(physicalProfile, 'hermes');
+    for (const path of [dirname(logicalProfile), logicalProfile, resolve(logicalProfile, 'hermes'), logicalHome, dirname(physicalProfile), physicalProfile, physicalHome]) {
+      const info = lstatSync(path);
+      if (!info.isDirectory() || info.isSymbolicLink()) return false;
+    }
+    const same = (left, right) => process.platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right;
+    return same(canonical(logicalProfile), physicalProfile) && same(canonical(logicalHome), physicalHome);
+  } catch { return false; }
+}
+
 export function createHermesProvider({
   launcher = discoverHermes().launcher,
   hermesHome = discoverHermes().hermesHome, hermesPython = '', hermesSource = '',
-  cwd = process.cwd(), dataDir = join(cwd, '.nemo'), timeoutMs = 120_000, family = false, profileId, memoryEnabled = false,
+  cwd = process.cwd(), dataDir = join(cwd, '.nemo'), timeoutMs = 120_000, family = false, profileId, memoryEnabled = false, builtinMemoryHome = '',
   providerKey = '',
   requireChatGPT = false, chatgptSession, chatgptStatus, chatgptFetch = fetch, onChatGPTFailure = () => {},
   localModel = null, localStatus, localFetch = fetch,
   nodeExecutable = process.execPath,
 } = {}) {
   if (typeof requireChatGPT !== 'boolean' || requireChatGPT && (providerKey || typeof chatgptSession !== 'function')) throw new Error('Nemo needs its ChatGPT plan connection before chatting.');
+  if (typeof builtinMemoryHome !== 'string' || builtinMemoryHome && (!requireChatGPT || !family || localModel || providerKey || memoryEnabled || !isAbsolute(builtinMemoryHome) || /[\r\n\0]/.test(builtinMemoryHome) || !privateMemoryHomeMatches(builtinMemoryHome, dataDir, profileId))) throw new Error('Native memory requires a private ChatGPT profile workspace.');
   if (localModel && (requireChatGPT || providerKey || localModel.origin !== LOCAL_OLLAMA.origin || localModel.model !== LOCAL_OLLAMA.model || localModel.context !== LOCAL_OLLAMA.context)) throw new Error('Choose the supported local Gemma assistant in Nemo setup.');
   if (providerKey && (typeof providerKey !== 'string' || providerKey.length < 16 || providerKey.length > 4096 || /[\r\n\0]/.test(providerKey))) throw new Error('The assistant account could not be unlocked. Connect it again in Nemo setup.');
   if (typeof nodeExecutable !== 'string' || !isAbsolute(nodeExecutable) || /[\r\n\0]/.test(nodeExecutable)) throw new Error('Nemo needs to repair its connected tools. Reinstall the app.');
@@ -128,6 +152,7 @@ export function createHermesProvider({
   for (const key of Object.keys(env)) if (key.startsWith('NEMO_MCP_') || key === 'NEMO_HERMES_MODE') delete env[key];
   delete env.NEMO_CHILD_POLICY;
   for (const key of Object.keys(env)) if (key.startsWith('NEMO_LOCAL_') || key.startsWith('NEMO_CHATGPT_PLAN_')) delete env[key];
+  for (const key of Object.keys(env)) if (key.startsWith('NEMO_BUILTIN_MEMORY')) delete env[key];
 
   function resolveRuntime() {
     if (runtimePromise) return runtimePromise;
@@ -171,16 +196,25 @@ export function createHermesProvider({
         ...(requireChatGPT ? { inferenceProvider: 'chatgpt', planUsageEnabled: plan?.planUsageEnabled === true && plan?.connected === true, manageUsageUrl: CHATGPT_USAGE_URL } : {}) };
     },
     async checkRuntime() { await resolveRuntime(); return { ready: true }; },
-    async run({ message, sessionId, useIntegrations = false, childMode = false, allowedConnectionTools, permissionRevision, workflowOutput = null, onText = () => {}, onTool = () => {}, onActivity = () => {}, onPolicyError = () => {}, signal }) {
+    async memoryCommand() {
+      if (!builtinMemoryHome) throw new Error('Native memory is not configured for this profile.');
+      const command = await resolveRuntime();
+      const suffix = `runpy.run_path(${JSON.stringify(guardPath)}, run_name='__main__')`;
+      if (command[3] !== '-c' || !command[4].endsWith(suffix)) throw new Error('Hermes memory runtime changed.');
+      return [...command.slice(0, 4), command[4].slice(0, -suffix.length) + `runpy.run_path(${JSON.stringify(memoryBridgePath)}, run_name='__main__')`];
+    },
+    async run({ message, sessionId, useIntegrations = false, childMode = false, allowedConnectionTools, permissionRevision, builtinMemoryAllowed = !!builtinMemoryHome, workflowOutput = null, onText = () => {}, onTool = () => {}, onActivity = () => {}, onPolicyError = () => {}, signal }) {
       if (workflowOutput !== null && (!localModel || workflowOutput !== 'school-notice-v1' || useIntegrations || sessionId)) throw new Error('This checked workflow requires a fresh local Gemma session without tools.');
       if (typeof childMode !== 'boolean' || (childMode && !family)) throw new Error('A trusted family learning policy is required.');
+      if (typeof builtinMemoryAllowed !== 'boolean' || builtinMemoryAllowed && !builtinMemoryHome) throw new Error('A trusted private memory permission is required.');
+      const builtinMemory = !!builtinMemoryHome && builtinMemoryAllowed;
       try {
       if (signal?.aborted) throw new Error('Request stopped.');
       const planSession = requireChatGPT ? await chatgptSession() : null;
       if (requireChatGPT && !planSession) throw chatgptPlanError('CHATGPT_SIGN_IN_REQUIRED');
-      const argv = configureHermesCommand(await resolveRuntime(), useIntegrations);
+      const argv = configureHermesCommand(await resolveRuntime(), useIntegrations, builtinMemory);
       const runEnv = { ...env, NEMO_HERMES_MODE: useIntegrations ? 'connections' : 'chat-only' };
-      const policy = createHermesEventPolicy(useIntegrations, { family, memoryEnabled, childMode, allowedConnectionTools });
+      const policy = createHermesEventPolicy(useIntegrations, { family, memoryEnabled, builtinMemory, childMode, allowedConnectionTools });
       if (family) {
         if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(profileId || '')) throw new Error('A trusted profile is required for this reply.');
         runEnv.NEMO_MCP_POLICY = 'family';
@@ -188,6 +222,13 @@ export function createHermesProvider({
         if (memoryEnabled) runEnv.NEMO_MCP_MEMORY = 'profile';
         runEnv.NEMO_MCP_PROFILE_ID = profileId;
         runEnv.NEMO_MCP_CONFIG_DIR = resolve(dataDir, '..', '..');
+      }
+      if (builtinMemoryHome) {
+        // Runtime bytes remain shared; all mutable agent state belongs to this person.
+        Object.assign(runEnv, { HERMES_HOME: builtinMemoryHome, HOME: builtinMemoryHome, USERPROFILE: builtinMemoryHome, APPDATA: builtinMemoryHome, LOCALAPPDATA: builtinMemoryHome,
+          NEMO_BUILTIN_MEMORY_HOME: builtinMemoryHome, NEMO_BUILTIN_MEMORY: builtinMemory ? 'profile' : 'denied', NEMO_MCP_DATA_DIR: resolve(dataDir) });
+        if (typeof permissionRevision !== 'string' || !/^\d+:\d+:(?:true|false)$/.test(permissionRevision)) throw new Error('A trusted memory permission revision is required.');
+        runEnv.NEMO_MCP_PERMISSION_REVISION = permissionRevision;
       }
       if (useIntegrations) {
         if(allowedConnectionTools!==undefined){if(!allowedConnectionTools.length)throw new Error('No connection tools are enabled for this profile.');runEnv.NEMO_MCP_ALLOWED_TOOLS=JSON.stringify(allowedConnectionTools);}
@@ -206,7 +247,7 @@ export function createHermesProvider({
       if (requireChatGPT) {
         const session = planSession;
         model = session.model;
-        const allowed = useIntegrations ? [...HERMES_CONNECTION_TOOLS].slice(0, family && !memoryEnabled ? 2 : 3).filter(name => allowedConnectionTools === undefined || allowedConnectionTools.includes(name.slice(11))) : [];
+        const allowed = [...(useIntegrations ? [...HERMES_CONNECTION_TOOLS].slice(0, family && !memoryEnabled ? 2 : 3).filter(name => allowedConnectionTools === undefined || allowedConnectionTools.includes(name.slice(11))) : []), ...(builtinMemory ? ['memory'] : [])];
         broker = await createChatGPTPlanBroker({ session, allowedTools: allowed, fetchImpl: chatgptFetch, signal, onFailure: () => child?.kill() });
         // The fixed local alias avoids Hermes guessing a different provider or
         // wire protocol from a cloud model's name. Only the broker sees the real model.
@@ -255,7 +296,7 @@ export function createHermesProvider({
             // callback, never provider stderr, tool arguments, results or text.
             onPolicyError({ reason: error.message, hasGuard: policy.verified,
               eventType: ['nemo_guard', 'nemo_guard_error', 'text', 'result', 'tool_use', 'tool_result'].includes(event.type) ? event.type : 'other',
-              ...(event.type === 'nemo_guard' ? { version: event.version, startup: event.stage === 'startup', permittedNames: Array.isArray(event.tools) && event.tools.every(name => HERMES_CONNECTION_TOOLS.includes(name)), toolCount: Array.isArray(event.tools) ? event.tools.length : -1 } : {}) });
+              ...(event.type === 'nemo_guard' ? { version: event.version, startup: event.stage === 'startup', permittedNames: Array.isArray(event.tools) && event.tools.every(name => HERMES_CONNECTION_TOOLS.includes(name) || builtinMemory && name === 'memory'), toolCount: Array.isArray(event.tools) ? event.tools.length : -1 } : {}) });
             sawTool = true; stop(); return;
           }
           if (!requireChatGPT && !localModel && event.type === 'system' && typeof event.model === 'string') model = event.model.slice(0, 100);
@@ -272,7 +313,11 @@ export function createHermesProvider({
             let failed = event.is_error === true;
             // Inspect only a bounded error envelope; raw contents never escape.
             try { let result=event.output; for(let i=0;i<2&&typeof result==='string'&&result.length<10_000;i++)result=JSON.parse(result); if(result&&typeof result==='object'&&(result.connected===false||typeof result.error==='string'&&result.error))failed=true; } catch {}
-            if(call)activity({ kind:'tool', state:failed?'failed':'completed', name:call.name, key:call.key });
+            if (call?.name === 'memory') {
+              let saved = false;
+              try { let value = event.output; for (let n = 0; n < 2 && typeof value === 'string' && value.length <= 32_000; n++) value = JSON.parse(value); saved = value?.success === true && value?.done === true && !value?.pending_approval && !value?.staged && !value?.error; } catch {}
+              activity({ kind:'tool', state:saved?'completed':'failed', name:call.name, key:call.key });
+            } else if(call)activity({ kind:'tool', state:failed?'failed':'completed', name:call.name, key:call.key });
           }
           if (event.type === 'text' && typeof event.text === 'string') {
             activity({ kind:'answer', state:'running' });

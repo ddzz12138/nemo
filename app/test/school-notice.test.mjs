@@ -18,7 +18,7 @@ function extraction(source) {
   return JSON.stringify({ actions: paragraphs.filter(p => /Return the|Bring your/.test(p.text)).map(p => ({ paragraph: p.id,
     action: p.text.split(/ by | on /)[0], quote: p.text, dateText: p.text.match(/\d+ November 2026/)[0] })) });
 }
-async function directory(t) { const root = await mkdtemp(resolve('test/.tmp-school-')); t.after(async () => { assert.equal(dirname(root), resolve('test')); assert.ok(root.startsWith(resolve('test/.tmp-school-'))); await rm(root, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 }); }); return root; }
+async function directory(t, close = async () => {}) { const root = await mkdtemp(resolve('test/.tmp-school-')); t.after(async () => { await close(); assert.equal(dirname(root), resolve('test')); assert.ok(root.startsWith(resolve('test/.tmp-school-'))); await rm(root, { recursive: true, force: true, maxRetries: 6, retryDelay: 150 }); }); return root; }
 const payload = (text, mimeType = 'text/plain') => ({ mimeType, body: { data: Buffer.from(text).toString('base64url') } });
 
 test('notice reader handles MIME alternatives and inert HTML without opening links or attachments', () => {
@@ -56,7 +56,8 @@ test('the extraction format is host-pinned and cannot grant tools or choose a di
 });
 
 async function family(t, { infer, providerType = 'ollama' } = {}) {
-  const root = await directory(t), calls = [], reads = [], grants = new Map(); let clock = NOW;
+  let app;
+  const root = await directory(t, () => app?.close()), calls = [], reads = [], grants = new Map(); let clock = NOW;
   const provider = { status: () => ({ connected: true, inferenceProvider: providerType }), async run(input) {
     calls.push(input); assert.equal(input.useIntegrations, false); assert.equal(input.sessionId, null); assert.equal(input.workflowOutput, 'school-notice-v1');
     if (infer) return infer(input);
@@ -70,9 +71,8 @@ async function family(t, { infer, providerType = 'ollama' } = {}) {
       readSelectedNotice: async ({ id, grant }) => { assert.equal(grant, grants.get(profile.id)); reads.push(profile.id); return notice(id, profile.id); },
     } };
   } };
-  let app = await createNemoServer(options), base;
+  app = await createNemoServer(options); let base;
   async function listen() { app.server.listen(0, '127.0.0.1'); await once(app.server, 'listening'); base = 'http://127.0.0.1:' + app.server.address().port; } await listen();
-  t.after(() => app.close());
   async function request(path, person, input) {
     const response = await fetch(base + path, { method: input === undefined ? 'GET' : 'POST', headers: { ...(person ? { Cookie: person.cookie, 'X-Nemo-Profile': person.profile.id } : {}), ...(input !== undefined ? { 'content-type': 'application/json', 'X-Nemo-Request': '1' } : {}) }, ...(input !== undefined ? { body: JSON.stringify(input) } : {}) }); return { status: response.status, headers: response.headers, data: await response.json() };
   }
@@ -83,6 +83,18 @@ async function family(t, { infer, providerType = 'ollama' } = {}) {
   async function finish(person, id) { for (let i = 0; i < 200; i++) { const r = await request('/api/runs/' + id, person); if (['completed','failed'].includes(r.data.status)) return r.data; await new Promise(r => setTimeout(r, 5)); } assert.fail('Workflow timed out'); }
   return { root, owner, pair, request, search, submit, finish, calls, reads, grants, get app() { return app; }, setClock: value => { clock = value; }, async restart() { await app.close(); app = await createNemoServer(options); await listen(); } };
 }
+test('school fixture closes its live host before removing the disposable profile', async t => {
+  const f = await family(t), close = f.app.close.bind(f.app);
+  f.app.close = async () => {
+    try { assert.equal(JSON.parse(await readFile(join(f.root, 'profiles.json'), 'utf8')).version, 2, 'host cleanup still has its profile registry'); }
+    finally { await close(); }
+  };
+  t.after(async () => {
+    assert.equal(f.app.server.listening, false, 'the actual host has closed');
+    await assert.rejects(readFile(join(f.root, 'profiles.json')), { code: 'ENOENT' });
+  });
+});
+
 test('selected-notice task is local, durable, cited, private and idempotent across reconnects', async t => {
   const f = await family(t), handle = await f.search(), key = randomUUID(), accepted = await f.submit(f.owner, handle, key);
   assert.equal(accepted.status, 202, JSON.stringify(accepted.data)); const run = await f.finish(f.owner, accepted.data.runId);

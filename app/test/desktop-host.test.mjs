@@ -118,6 +118,13 @@ test('a component shutdown failure still cleans up the other desktop components 
   await assert.rejects(readFile(join(f.dataDir, 'cli-process.json')), { code: 'ENOENT' });
 });
 
+test('desktop host retries unresolved app cleanup and never restarts the app after close fails', async t => {
+  const f = await fixture(t); const app = f.apps.at(-1); let attempts = 0;
+  app.close = async () => { if (++attempts === 1) throw new Error('Synthetic native stop unconfirmed'); app.closed = true; };
+  await assert.rejects(f.host.close()); assert.equal(app.closed, false); assert.equal(f.apps.length, 1);
+  await f.host.close(); assert.equal(attempts, 2); assert.equal(app.closed, true); assert.equal(f.apps.length, 1);
+});
+
 test('public identity verification compares installation and challenge with strict no-redirect transport', async () => {
   const installationId = randomUUID(), challenge = 'a'.repeat(48); let request;
   assert.equal(await verifyRemoteInstallation({ publicOrigin, installationId, challenge }, { fetchImpl: async (url, options) => { request = { url, options }; return new Response(JSON.stringify({ service: 'nemo', installationId, challenge })); } }), true);

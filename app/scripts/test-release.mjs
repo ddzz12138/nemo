@@ -18,20 +18,44 @@ await verifyHermesBundle({root:runtime,manifest:runtimeManifest.hermes});
 Object.assign(process.env,{NEMO_TEST_PYTHON:python,NEMO_TEST_HERMES_ROOT:source,NEMO_TEST_NATIVE_PYTHON:python,NEMO_TEST_NATIVE_SOURCE:source});
 const files=(await readdir(join(APP_ROOT,'test'))).filter(x=>x.endsWith('.test.mjs')).map(x=>join(APP_ROOT,'test',x));
 const passed=new Set(),skipped=[],failed=[];
+// Nested hook/OS failures need classification without printing provider data,
+// command arguments, filesystem paths or credential-bearing error messages.
+function failureCodes(error,depth=0){
+  if(!error||typeof error!=='object'||depth>3)return undefined;
+  const value={};
+  for(const key of ['name','code','failureType','syscall'])if(typeof error[key]==='string'&&/^[A-Za-z0-9_-]{1,80}$/.test(error[key]))value[key]=error[key];
+  if(error.cause)value.cause=failureCodes(error.cause,depth+1);
+  if(Array.isArray(error.errors))value.errors=error.errors.slice(0,3).map(item=>failureCodes(item,depth+1));
+  return value;
+}
 for await(const event of run({files,concurrency:2})) {
   if(event.type==='test:pass') {
     if(event.data.skip)skipped.push(event.data.name);else passed.add(event.data.name);
   }
-  if(event.type==='test:fail'){failed.push(event.data.name);console.error(event.data.name+': '+String(event.data.details?.error?.message||'failed').slice(0,1500));}
+  if(event.type==='test:fail'){failed.push(event.data.name);console.error(event.data.name+': '+String(event.data.details?.error?.message||'failed').slice(0,1500)+' '+JSON.stringify(failureCodes(event.data.details?.error)));}
 }
 try { await verifyHermesBundle({root:runtime,manifest:runtimeManifest.hermes}); }
 catch(error) { failed.push('sealed runtime remains unchanged after the complete suite'); console.error(error.message); }
 const mandatory=[
   'real Electron cold restarts restore owner/member chat and saved history; sign-out, revocation and fresh installs stay gated',
   'a Windows version-folder upgrade retains sign-in, chat and protected accounts; expired sign-in never repeats account setup',
+  'desktop quit saves sign-in and requires host completion acknowledgement plus clean exit',
+  'desktop packaging probes stock PM against its exact selected resources and reverifies sealed bytes',
   'installed Hermes discovers and executes only Nemo read tools through real MCP stdio, using synthetic data',
   'actual bundled Hermes answers through the plan adapter with synthetic OAuth only',
   'actual bundled Hermes executes its exact calendar read through namespaced plan tools and MCP',
+  'actual Hermes native memory saves, recalls privately, respects denied memory and shares the UI store',
+  'actual Hermes combines its native memory tool with an explicitly permitted calendar read',
+  'native provider binds an actual Windows short-name root to its canonical private memory',
+  'native Memory HTTP uses the same Hermes files and pins every operation to its signed-in profile',
+  'partial native clear reports incomplete and leaves exposed-source cleanup blocked until verified retry',
+  'compiled desktop Memory exposes native Forget/Clear without Off or local-engine setup',
+  'actual unchanged Hermes gateway exposes native skills and tools in the owner memory workspace',
+  'actual unchanged Hermes executes skills, terminal and a subagent through the ChatGPT broker',
+  'actual Hermes Stop and forced exit reopen saved conversations without replaying interrupted turns',
+  'actual packaged PM routes stock CLI through separate pinned dependencies with isolated imports',
+  'full Hermes is local-owner only, rejects arbitrary controls, blocks concurrent normal chat and stops at logout',
+  'compiled Hermes workspace shows actual readiness, native approval choices and private masked request controls',
   'bundled assistant inventory stays intact after real plan replies, history resume and tool execution',
   'actual official Node bytes stage alone, preserve other runtime settings, and start without PATH',
   'bundled Node launches the actual private MCP server and reads only a synthetic profile with empty PATH',
