@@ -1,6 +1,7 @@
 // Public activity is an allowlisted projection, never an agent transcript.
 export const THINKING_WORDS = Object.freeze(['pondering','contemplating','musing','cogitating','ruminating','deliberating','mulling','reflecting','processing','reasoning','analyzing','computing','synthesizing','formulating','brainstorming']);
 const tools = {
+  memory: ['Updating your memory…', 'Memory updated', 'Memory was not saved'],
   notice_read: ['Reading selected notice…', 'Selected notice read', 'Notice read failed'],
   notice_extract: ['Extracting actions locally…', 'Local extraction complete', 'Local extraction failed'],
   notice_check: ['Checking quotations and dates…', 'Quotations and dates checked', 'Notice checks failed'],

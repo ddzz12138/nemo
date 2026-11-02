@@ -1,5 +1,8 @@
 import { parseArgs } from 'node:util';
 import { prepareHermesBundle } from '../lib/hermes-bundle.mjs';
+import { stageHermesPackageRuntime } from '../lib/hermes-pm-bundle.mjs';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
 const { values } = parseArgs({ options: { source: { type: 'string' }, python: { type: 'string' }, 'site-packages': { type: 'string' }, out: { type: 'string' } }, strict: true });
 if (!values.source || !values.python || !values['site-packages'] || !values.out) {
@@ -8,6 +11,7 @@ if (!values.source || !values.python || !values['site-packages'] || !values.out)
 } else {
   try {
     const result = await prepareHermesBundle({ sourceRoot: values.source, pythonRoot: values.python, sitePackages: values['site-packages'], out: values.out, onProgress: message => console.log(message) });
+    await stageHermesPackageRuntime({ root: values.out, releaseLock: JSON.parse(await readFile(new URL('../desktop/hermes-release.json', import.meta.url), 'utf8')), artifactCache: resolve('.work/release-inputs'), onProgress: message => console.log(message) });
     console.log(`Prepared verified relocatable Hermes: ${result.files} files, ${result.dependencies} dependency distributions. No personal Hermes data was copied.`);
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

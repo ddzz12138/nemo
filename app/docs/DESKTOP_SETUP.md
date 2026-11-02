@@ -71,9 +71,11 @@ the same setup layout with a fragment capability fallback.
   profile registry. Setup never presents a QR before the real host readiness
   checks permit pairing. The QR is encoded with `qrcode`; it is not a mock image.
 - `FamilyPage.jsx` and `FamilyReview.jsx` reuse existing authorized APIs inside
-  the shared sidebar. Model-backed `MemoryPage.jsx` and School notice are
-  experimental groundwork, hidden from the public app. Old direct Memory links
-  return a deferred-feature response; phone History stays available.
+  the shared sidebar. `MemoryPage.jsx` uses Hermes's native private store through
+  the authenticated Memory API. It shows automatic memory and view/edit/forget/
+  clear controls, with no engine setup or Memory off switch. Read failures show
+  Retry while saved conversations remain available. The separate local-only
+  School notice experiment remains hidden from the public app.
 - `lib/assistant-onboarding.mjs` connects an eligible existing ChatGPT plan with
   browser sign-in, S256 PKCE, state and OIDC nonce/signature validation. It uses
   Nemo's own dynamic registration and a stable installation identifier. The

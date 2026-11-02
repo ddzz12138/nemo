@@ -26,6 +26,12 @@ ChatGPT plan use without exposing the billing account's identity to other family
 members. Nemo history is stored locally; connecting ChatGPT does not import the
 user's existing ChatGPT conversations.
 
+Hermes memory works automatically in each Nemo person's private Hermes home.
+Its bounded notes stay on the PC and accompany relevant ChatGPT requests;
+memory decisions use the same authorized plan. The Memory page reads and changes
+that native store, with view/edit/forget/clear controls and no additional model
+or engine to install. Clearing notes preserves the original chat History.
+
 ## Backend connection
 
 Nemo uses its own dynamic OpenAI client registration, stable host identifier,
@@ -50,7 +56,9 @@ When ChatGPT is selected, desktop inference requires this connection, including 
 after sign-out. Ambient API keys and provider fallback settings cannot turn a
 missing or exhausted ChatGPT grant into a paid request. The independent native
 chat preview remains unavailable in the desktop route until its separate
-inference path is adapted; its saved data is preserved.
+inference path is adapted; its saved data is preserved. The separate local-owner
+[Hermes workspace](HERMES_WORKSPACE.md) connects the upstream gateway to the same
+ChatGPT plan; opening it does not enable that older family-native preview.
 
 ## Recovery and upgrades
 

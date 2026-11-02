@@ -4,6 +4,14 @@ import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 
 const source = await readFile(new URL('../public/identity.js', import.meta.url), 'utf8');
+test('identity shares native Memory availability from existing session reads and clears it on logout',async()=>{
+ let reads=0;const window={fetch:async path=>{if(path==='/api/session'){reads++;return Response.json({authenticated:true,profile:{id:'synthetic',name:'Synthetic'},memoryMode:'profile-hermes'});}return Response.json({ok:true});}};
+ const document={getElementById:()=>null,querySelectorAll:()=>[],body:{replaceChildren(){}}};
+ vm.runInNewContext(source,{window,document,Headers});
+ const [first,second]=await Promise.all([window.NemoIdentity.load(),window.NemoIdentity.load()]);
+ assert.equal(reads,1);assert.equal(first.memoryMode,'profile-hermes');assert.equal(second.memoryMode,'profile-hermes');assert.equal(window.NemoIdentity.memoryMode,'profile-hermes');
+ await window.nemoFetch('/api/logout',{method:'POST'});assert.equal(window.NemoIdentity.memoryMode,'chat-history');assert.equal(window.NemoIdentity.profile,null);
+});
 test('browser identity pins read/write requests and discards responses from a previous person', async () => {
   const calls = []; let release; let removed = false; let reloaded = false; let listener;
   const alice = { id: 'alice', name: 'Alice' }; const bob = { id: 'bob', name: 'Bob' };

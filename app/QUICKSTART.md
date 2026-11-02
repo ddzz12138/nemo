@@ -1,6 +1,6 @@
 # Start with your family
 
-The first public version requires an eligible ChatGPT subscription. No local AI model, Ollama installation or API key is offered. Relevant context goes to ChatGPT for replies; saved profiles and history stay on the PC. Automatic Memory and local-model workflows are deferred.
+The first public version requires an eligible ChatGPT subscription. No local AI model, Ollama installation or API key is offered. Relevant context and saved Hermes notes go to ChatGPT for replies; profiles, history and each person's memory store stay on the PC. Hermes remembers useful details automatically, without another model to set up.
 
 ## Windows desktop preview
 
@@ -15,6 +15,9 @@ The first public version requires an eligible ChatGPT subscription. No local AI 
    the account's ChatGPT usage and credit settings apply.
 5. Choose **Continue as [your name]**, confirm your name, then send a message.
    Use **Your conversations** to revisit it, or **New Chat** to start another.
+6. Open **Memory** to see, correct, forget or clear the details Hermes saves.
+   Memory works automatically; there is no engine installation or Off switch.
+   Clearing notes does not erase the original conversation from History.
 
 If the browser did not open, choose **Open sign-in again**. If a saved account
 needs recovery, choose **Finish connecting**. If a usage limit is
@@ -50,11 +53,14 @@ For a family member:
 2. Enter your personal invitation and follow `/setup.html` for Home Screen setup.
 3. Connect your own Gmail. Choose optional snippet sync separately and review
    whether retrieved information may be used in AI replies.
-4. Revisit private chats in History. Automatic Memory is deferred; calendar remains a separate Shortcut snapshot.
+4. Revisit private chats in History and saved details in Memory. Hermes memory is automatic; the calendar snapshot is stored separately.
 5. Open Tasks to see recent replies and stop active work.
 
 The host must stay online. Invitations are single-use; request another to add a
 device. Sign out before switching people. Never share account passwords.
 
-This alpha does not enable native full-tool workers, arbitrary PC control or
-the planned ten-minute task budget. Those tools remain Needs setup.
+Ordinary family chat keeps its guarded tools; it does not grant arbitrary PC
+control. The owner can open the separate [Hermes workspace](docs/HERMES_WORKSPACE.md)
+directly on the home PC to use Hermes’s native skills, tools and approvals with
+the owner’s operating-system access. Other family profiles and phones cannot
+open that workspace. Tool availability still depends on its native setup.

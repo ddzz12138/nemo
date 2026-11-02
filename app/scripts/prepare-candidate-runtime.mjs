@@ -5,6 +5,7 @@ import { APP_ROOT } from '../lib/config.mjs';
 import { verifyHermesSource } from '../lib/hermes-source.mjs';
 import { prepareReleaseInputs } from '../lib/release-inputs.mjs';
 import { prepareHermesBundle } from '../lib/hermes-bundle.mjs';
+import { stageHermesPackageRuntime } from '../lib/hermes-pm-bundle.mjs';
 import { prepareNodeRuntime } from './prepare-node-runtime.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -14,6 +15,7 @@ const lock = JSON.parse(await readFile(join(APP_ROOT, 'desktop/hermes-release.js
 const inputs = await prepareReleaseInputs({ lock, cache: join(APP_ROOT, '.work/release-inputs') });
 const out = join(APP_ROOT, '.work/desktop-runtime');
 const result = await prepareHermesBundle({ sourceRoot: source.root, pythonRoot: inputs.pythonRoot, sitePackages: inputs.sitePackages, out, onProgress: message => console.log(message) });
+await stageHermesPackageRuntime({ root: out, releaseLock: lock, artifactCache: join(APP_ROOT, '.work/release-inputs'), onProgress: message => console.log(message) });
 // These writers merge the same staging manifest: run them sequentially.
 await prepareNodeRuntime({ out });
 await promisify(execFile)(process.execPath, [join(APP_ROOT, 'scripts/prepare-desktop-runtime.mjs')], { windowsHide: true, timeout: 180_000, maxBuffer: 1_000_000 });

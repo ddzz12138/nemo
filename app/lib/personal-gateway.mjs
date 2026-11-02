@@ -29,7 +29,8 @@ const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=
 
 class RequestError extends Error { constructor(status, message, code) { super(message); this.status = status; this.code = code; } }
 
-export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDir = join(ROOT, 'public'), provider, pairingCode, now = () => Date.now(), logger = console.log, integrations, profile, validateDevice, resolveProfile, onCalendarToken, memoryFactory, resources,publicOrigin = '',onConnectionsChanged=()=>{},nativeBusy=()=>false } = {}) {
+export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDir = join(ROOT, 'public'), provider, pairingCode, now = () => Date.now(), logger = console.log, integrations, profile, validateDevice, resolveProfile, onCalendarToken, memoryFactory, builtinMemoryFactory, resources,publicOrigin = '',onConnectionsChanged=()=>{},nativeBusy=()=>false } = {}) {
+  if (builtinMemoryFactory && (!profile || memoryFactory)) throw new Error('Native memory requires one private profile store.');
   await mkdir(dataDir, { recursive: true });
   provider ||= createHermesProvider({ cwd: ROOT, dataDir, family: !!profile });
   const calendar = integrations?.calendar || await createCalendarStore({ dataDir, now });
@@ -87,6 +88,12 @@ export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDi
     const session = state.sessions[profile.id];
     if ((session.childModeRevision || 0) !== (profile.childModeRevision || 0) || (session.childMode === true) !== (profile.childMode === true)) session.hermesSessionId = null;
     session.childModeRevision = profile.childModeRevision || 0; session.childMode = profile.childMode === true;
+    // Keep Nemo History/grants in place; provider IDs from the old shared home
+    // must never be resumed inside a different person's private Hermes home.
+    if (builtinMemoryFactory && state.hermesWorkspaceVersion !== 1) {
+      for (const saved of Object.values(state.sessions)) { saved.hermesSessionId = null; delete saved.hermesMemoryRevision; }
+      state.hermesWorkspaceVersion = 1;
+    }
   }
   await save();
   function assertIdle() {
@@ -117,6 +124,18 @@ export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDi
   let memory = { async list() { throw new MemoryError(503, 'Memory is not available.', 'MEMORY_UNAVAILABLE'); }, async get() { throw new MemoryError(503, 'Memory is not available.', 'MEMORY_UNAVAILABLE'); }, async save() { throw new MemoryError(503, 'Memory is not available.', 'MEMORY_UNAVAILABLE'); }, async preview() { throw new MemoryError(503, 'Memory is not available.', 'MEMORY_UNAVAILABLE'); }, async remove() { throw new MemoryError(503, 'Memory is not available.', 'MEMORY_UNAVAILABLE'); } };
   const memoryConfirmations=new Map();
   let gbrain = null; let engine = { connected: false }; let memoryConnection;
+  async function invalidateMemoryContext() {
+    memoryConfirmations.clear();
+    for (const saved of Object.values(state.sessions)) { saved.hermesSessionId = null; delete saved.hermesMemoryRevision; }
+    await save();
+  }
+  async function assertNativeMemoryIdle() {
+    assertIdle();
+    const current = resolveProfile ? await resolveProfile() : profile;
+    if (!canUseCapability(current, 'memory')) throw new MemoryError(403, 'Memory is not permitted for this profile.', 'TOOL_PERMISSION');
+    if (policyRevision(current) !== policyRevision(profile)) throw new MemoryError(409, 'Profile settings changed. Refresh Memory and review the change again.', 'MEMORY_CHANGED');
+    assertIdle();
+  }
   async function clearDeferredMemory() {
     // Public v1 defers model-backed Memory. An old experimental store may still
     // hold inbox copies: a no-op mirror must never pretend it removed them.
@@ -126,8 +145,18 @@ export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDi
       throw new GmailError('GMAIL_MEMORY_CLEANUP', 'This profile has saved Memory from an earlier build. Clear its Gmail copies in that build before changing Google accounts. Your saved data was preserved.');
     }
   }
-  let mirror = { status: () => ({ sources: { gmail: false, calendar: false }, configured: false }), async clear(source) { if (source === 'gmail') await clearDeferredMemory(); }, async sync() {}, async syncAll() {}, async configure() {} };
-  if (!profile || memoryFactory) try {
+  let mirror = { status: () => ({ sources: { gmail: false, calendar: false }, configured: false }), async clear(source) {
+    if (source === 'gmail') await clearDeferredMemory();
+    if (builtinMemoryFactory && ['gmail', 'calendar'].includes(source)) {
+      if (!memoryConnection?.assertSourceCleared) throw new MemoryError(503, 'Nemo could not verify saved memory. Open Memory and clear its saved notes before changing this connection.', 'MEMORY_SOURCE_CLEANUP');
+      await memoryConnection.assertSourceCleared(source);
+    }
+  }, async sync() {}, async syncAll() {}, async configure() {} };
+  if (builtinMemoryFactory) try {
+    memoryConnection = await builtinMemoryFactory({ profileId: profile.id, profileDataDir: dataDir, configDir: profile.configDir, assertIdle: assertNativeMemoryIdle, onChanged: invalidateMemoryContext, now });
+    memory = memoryConnection.controller; engine = memoryConnection.engine;
+  } catch (error) { event('memory_unavailable', { name: error.name }); }
+  else if (!profile || memoryFactory) try {
     if (profile) {
       memoryConnection = await memoryFactory({ profileId: profile.id, profileDataDir: dataDir, configDir: profile.configDir, calendar, gmail, getChat, clearChat, assertIdle, now, logger,resources });
       ({ gbrain, mirror, engine } = memoryConnection); memory = memoryConnection.controller;
@@ -249,10 +278,38 @@ export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDi
       event('run_started', { runId });
       if (run.useIntegrations && !consentActive(session)) throw new Error('Connection consent changed. Send a new question after checking Connections.');
       const history = session.messages.filter(item => item.id !== run.userMessageId);
+      // Replaying an old connected reply can teach native memory again even
+      // after its files were cleared. Carry conservative source exposure with
+      // the conversation, without tracking individual facts or email contents.
+      const connectionSources = { gmail: false, calendar: false };
+      for (const item of history) for (const source of ['gmail', 'calendar']) if (item.connectionSources?.[source] === true) connectionSources[source] = true;
+      const priorMessages = new Map(history.map(item => [item.id, item]));
+      for (const prior of Object.values(state.runs)) if (prior.useIntegrations && priorMessages.has(prior.userMessageId) && !priorMessages.get(prior.assistantMessageId)?.connectionSources) {
+        connectionSources.gmail = true; connectionSources.calendar = true;
+      }
+      if (run.useIntegrations) for (const source of ['gmail', 'calendar']) connectionSources[source] ||= canUseCapability(profile, source);
+      let builtinMemoryAllowed = !!builtinMemoryFactory && canUseCapability(profile, 'memory');
+      let memoryRevision = null;
+      if (builtinMemoryAllowed) {
+        try {
+          if (!memoryConnection) throw new Error('Private memory is unavailable.');
+          for (const source of ['gmail', 'calendar']) if (connectionSources[source] && !canUseCapability(profile, source)) throw new Error('A source permission changed.');
+          if (connectionSources.gmail || connectionSources.calendar) await memoryConnection.markConnectedUse(connectionSources);
+          for (const source of ['gmail', 'calendar']) if (!canUseCapability(profile, source)) await memoryConnection.assertSourceCleared(source);
+          memoryRevision = await memoryConnection.revision();
+        } catch {
+          // A storage failure or revoked source must not recover context from
+          // the shared home, nor claim that memory was saved successfully.
+          builtinMemoryAllowed = false;
+          activityEvent(run, { kind: 'memory', phase: 'failed' });
+        }
+      }
+      const memoryScope = builtinMemoryFactory ? `${builtinMemoryAllowed}:${memoryRevision || 'unavailable'}` : null;
+      if (builtinMemoryFactory && session.hermesMemoryRevision !== memoryScope) session.hermesSessionId = null;
       const question = profile ? `SIGNED_IN_PERSON_JSON\n${stringifyConnectionData({ name: profile.name })}\nEND_SIGNED_IN_PERSON_JSON\n\n${run.message}` : run.message;
       const plain = profile && !session.hermesSessionId
         ? `Continue this person's conversation. Earlier messages below are quoted context; answer the current question.\nCHAT_HISTORY_JSON\n${stringifyConnectionData(history.slice(-8).map(item => ({ role: item.role, text: item.text.slice(0, 2000) })))}\nEND_CHAT_HISTORY_JSON\n\n${question}` : question;
-      const message = run.useIntegrations ? buildToolConnectionPrompt({ message: question, history, now, memoryEnabled: !profile || !!memoryFactory }) : plain;
+      const message = run.useIntegrations ? buildToolConnectionPrompt({ message: question, history, now, memoryEnabled: !profile || !!memoryFactory, builtinMemory: builtinMemoryAllowed }) : plain;
       let result;
       if (run.workflow) {
         const authorize = async () => {
@@ -266,7 +323,7 @@ export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDi
           infer: input => provider.run({ ...input, childMode: profile.childMode === true, childModeRevision: revision, policyRevision: profile.policyRevision || 0,
             useIntegrations: false, sessionId: null, signal: controller.signal, onText() {}, onActivity: value => { if (currentPolicy()) activityEvent(run, value); } }) });
         result = checked; run.workflowReceipt = checked.receipt;
-      } else result = await provider.run({ message, childMode: profile?.childMode === true, childModeRevision: revision, policyRevision:profile?.policyRevision||0, useIntegrations: !!run.useIntegrations, sessionId: run.useIntegrations ? null : session.hermesSessionId, signal: controller.signal, onActivity: value => {if(currentPolicy())activityEvent(run,value);}, onText: text => { if (currentPolicy()) { activityEvent(run,{kind:'answer',state:'running'}); run.text = (run.text + text).slice(0, 200_000); } } });
+      } else result = await provider.run({ message, childMode: profile?.childMode === true, childModeRevision: revision, policyRevision:profile?.policyRevision||0, ...(builtinMemoryFactory ? { builtinMemoryAllowed } : {}), useIntegrations: !!run.useIntegrations, sessionId: run.useIntegrations ? null : session.hermesSessionId, signal: controller.signal, onActivity: value => {if(currentPolicy())activityEvent(run,value);}, onText: text => { if (currentPolicy()) { activityEvent(run,{kind:'answer',state:'running'}); run.text = (run.text + text).slice(0, 200_000); } } });
       await refreshProfile();
       if (!currentPolicy()) throw new Error(policyChanged);
       if (!result || typeof result.text !== 'string' || !result.text.trim() || result.text.trim() === '(empty)') throw new Error('The agent returned no text.');
@@ -274,9 +331,10 @@ export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDi
       // Never resume a provider session containing previously imported private
       // source material after a later request turns connections off.
       session.hermesSessionId = run.useIntegrations || run.workflow ? null : result.sessionId || session.hermesSessionId;
+      if (builtinMemoryFactory) session.hermesMemoryRevision = memoryScope;
       recordActivity(run.activity,{kind:'run',state:'completed'},now());
       run.assistantMessageId=randomUUID();
-      session.messages.push({ id: run.assistantMessageId, role: 'assistant', text: run.text, createdAt: run.finishedAt, activity:publicActivity(run.activity) });
+      session.messages.push({ id: run.assistantMessageId, role: 'assistant', text: run.text, createdAt: run.finishedAt, activity:publicActivity(run.activity), ...(builtinMemoryFactory ? { connectionSources } : {}) });
       event('run_completed', { runId, durationMs: run.finishedAt - run.createdAt });
     } catch (error) {
       const recovery = publicChatGPTError(error);
@@ -288,8 +346,10 @@ export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDi
       if (session.activeRunId === runId) session.activeRunId = null;
       controllers.delete(controller); active--;
       if(run.status==='completed') {
-        if(!run.workflow&&memoryConnection?.curation&&(!profile||canUseCapability(profile,'memory')))memoryConnection.curation.capture({id:run.userMessageId,text:run.message,onActivity:value=>activityEvent(run,value)});
-        else activityEvent(run,{kind:'memory',phase:'skipped'});
+        if(!builtinMemoryFactory) {
+          if(!run.workflow&&memoryConnection?.curation&&(!profile||canUseCapability(profile,'memory')))memoryConnection.curation.capture({id:run.userMessageId,text:run.message,onActivity:value=>activityEvent(run,value)});
+          else activityEvent(run,{kind:'memory',phase:'skipped'});
+        }
       }
       await save().catch(() => {event('state_write_failed');if(run.status==='completed'){run.status='failed';run.text='';run.error='The reply could not be saved. Check PC storage before trying again.';session.messages=session.messages.filter(message=>message.id!==run.assistantMessageId);}});
       settlingRuns.delete(runId);
@@ -515,6 +575,9 @@ export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDi
           delete state.sessions[owner]; await save(); await leave.revokeOwner?.(owner);
           return json(res, 200, { ok: true }, { 'Set-Cookie': cookie(req, '', 0) });
         }
+        if (builtinMemoryFactory && ['/api/memory/learning', '/api/memory/enable', '/api/memory/mirror', '/api/memory/mirror/sync', '/api/memory/semantic'].includes(path)) {
+          throw new RequestError(410, 'Hermes memory works automatically. Use Memory to view, forget or clear saved details.', 'MEMORY_AUTOMATIC');
+        }
         if(path==='/api/memory/board'&&req.method==='GET'){
           if(!memoryConnection?.curation)throw new RequestError(503,'Personal memory is not available.','MEMORY_UNAVAILABLE');
           const board=await memoryConnection.curation.board(owner);if(profile&&!canUseCapability(profile,'gmail'))board.references={gmail:[]};return json(res,200,board);
@@ -634,6 +697,7 @@ export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDi
           const id = randomUUID();
           await turn(async () => {
             currentConversation();
+            if(nativeBusy()){rates.pop();throw new RequestError(409,'Stop Hermes workspace or wait for the current reply before sending a message.','RUN_ACTIVE');}
             if (session.activeRunId) { rates.pop(); throw new RequestError(409, 'Wait for the current reply before sending another message.', 'RUN_ACTIVE'); }
             // Settings are authoritative, including for older clients that send
             // a per-message flag. Snapshot the grant when accepting this run.
@@ -707,8 +771,10 @@ export async function createNemoServer({ dataDir = join(ROOT, '.nemo'), publicDi
   }
   return {
     server, pairingCode: code, calendar,
+    isBusy(){return !!state.sessions[profile.id]?.activeRunId||[...settlingRuns].some(id=>state.runs[id]?.owner===profile.id);},
+    async assertWorkspaceIdle(){await turn(()=>{if(state.sessions[profile.id]?.activeRunId||[...settlingRuns].some(id=>state.runs[id]?.owner===profile.id))throw Object.assign(new Error('Wait for the current chat reply before opening Hermes workspace.'),{status:409,code:'RUN_ACTIVE'});});},
     async tasks(){if(!profile)throw new Error('Family task summaries require a trusted profile.');await refreshProfile();return taskSummaries(profile.id);},
-    async capabilityReadiness() { const mail = await gmail.status(); return { chat: provider.status().verified === true, gmail: mail.connected === true, calendar: calendar.status().connected === true, memory: engine.connected === true }; },
+    async capabilityReadiness() { const mail = await gmail.status(); return { chat: provider.status().verified === true, gmail: mail.connected === true, calendar: calendar.status().connected === true, memory: engine.connected === true, ...(builtinMemoryFactory ? { memoryKind: 'hermes-builtin' } : {}) }; },
     hasOAuthState: value => gmailOnboarding.hasState(value),
     updateName: value => { if (profile) profile.name = value; },
     refreshProfile,

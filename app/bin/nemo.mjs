@@ -23,7 +23,7 @@ async function main() {
   }
   if (command === 'host-setup' && !args.length) {
     const { startDesktopHost } = await import('../lib/desktop-host.mjs');
-    const host = await startDesktopHost({ dataDir: config.dataDir, openExternal: async url => {
+    const host = await startDesktopHost({ dataDir: config.dataDir, resourcesPath:process.env.NEMO_DESKTOP_RESOURCES_PATH||undefined, openExternal: async url => {
       const { spawn } = await import('node:child_process');
       if (process.platform === 'win32') {
         // Fixed PowerShell program, URL passed over stdin; never shell-interpolated.
@@ -32,7 +32,10 @@ async function main() {
       } else await new Promise((resolve, reject) => { const child = spawn('/usr/bin/open', [url], { shell:false, stdio:'ignore' }); child.once('error', reject); child.once('close', code => code === 0 ? resolve() : reject(new Error('Sign-in could not open.'))); });
     } });
     console.log(`Open this private setup link on this computer: ${host.bootstrapUrl}`);
-    for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => { void host.close().then(() => process.exit(0)); });
+    let stopping=false;
+    const stop=()=>{if(stopping)return;stopping=true;void host.close().then(()=>process.exit(0),()=>{console.error('Nemo could not confirm that all work stopped. Check the preview before closing its terminal.');stopping=false;});};
+    for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal,stop);
+    process.on('message',message=>{if(message?.type==='nemo:stop')stop();});
     return;
   }
   if(command==='preview'){

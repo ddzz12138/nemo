@@ -31,13 +31,18 @@ Choose tools for this child to grant individual capabilities. Permission alone
 does not enable an unfinished backend: Tools continues to show Needs setup or
 Unavailable until that capability works. Existing unclassified members keep
 their earlier read access and cannot gain computer tools without classification.
+The full Hermes workspace is reserved for the owner directly on the home PC;
+classifying a member or child does not grant access to it.
 
 Tool permissions are checked on the server, including after queueing and at the
 MCP boundary. Changing them cancels incompatible work and invalidates old tool
 contexts and deletion confirmations. Enabling Gmail does not grant access to
 another person's account. Connections consent is separate from owner permission.
-Memory learning runs only while Memory is permitted. Removing that permission
-pauses learning; re-enabling Memory does not silently enable learning again.
+Hermes memory runs automatically while Memory is permitted. Child tool grants
+remain enforced for prompt injection, memory-tool execution and the Memory API;
+there is no separate end-user learning or Memory off switch. Re-enabling the
+child's Memory capability restores the automatic native behavior. Native notes
+remain private to that person's Hermes workspace.
 
 Child mode provides tutoring guidance. These features are not comprehensive
 parental controls or a guarantee against harmful model output.

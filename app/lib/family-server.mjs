@@ -1,10 +1,12 @@
 import http from 'node:http';
 import { isIP } from 'node:net';
 import { readFile, stat } from 'node:fs/promises';
-import { join, resolve, extname, sep } from 'node:path';
+import { join, resolve, dirname, extname, sep } from 'node:path';
 import { createProfileStore, DEVICE_MS, publicProfile } from './profile-store.mjs';
 import { createNemoServer as createPersonalGateway } from './personal-gateway.mjs';
 import { createHermesProvider } from './hermes.mjs';
+import { createHermesMemory, prepareHermesWorkspace } from './hermes-memory.mjs';
+import { createHermesWorkspace } from './hermes-workspace.mjs';
 import { capabilitySnapshot } from './capabilities.mjs';
 import { validatePublicOrigin } from './config.mjs';
 import { createExecutionSlots } from './execution-slots.mjs';
@@ -17,7 +19,8 @@ import { createPhoneDispatch } from './phone-link-dispatch.mjs';
 
 const fail = (status, code, message) => { throw Object.assign(new Error(message), { status, code }); };
 const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
-export async function createFamilyServer({ dataDir, publicDir, provider, integrationsForProfile, memoryFactory, publicOrigin = '', hermesOptions = {}, nativeFactory, phoneLinkFactory, phoneLinkOptions = {}, now = Date.now, logger = console.log, ownerName = 'Owner', installationId = '', trustedProxy = '' }) {
+export async function createFamilyServer({ dataDir, publicDir, provider, integrationsForProfile, memoryFactory, builtinMemory = false, publicOrigin = '', hermesOptions = {}, nativeFactory, workspaceFactory = createHermesWorkspace, phoneLinkFactory, phoneLinkOptions = {}, now = Date.now, logger = console.log, ownerName = 'Owner', installationId = '', trustedProxy = '' }) {
+  if (typeof builtinMemory !== 'boolean' || builtinMemory && memoryFactory) throw new Error('Choose one supported profile memory connection.');
   publicOrigin = validatePublicOrigin(publicOrigin);
   if (installationId && !/^[a-f0-9-]{36}$/.test(installationId)) throw new Error('Invalid installation identity.');
   if (!['', 'cloudflare'].includes(trustedProxy)) throw new Error('Unsupported Nemo proxy configuration.');
@@ -27,6 +30,18 @@ export async function createFamilyServer({ dataDir, publicDir, provider, integra
   try{native=await nativeFactory?.({dataDir,getProfile:id=>store.profile(id),isDeviceActive:(deviceId,profileId)=>store.deviceActive(deviceId,profileId),connectionsForProfile:async id=>(await context(await store.profile(id))).nativeConnections(),legacyHistoryForProfile:async id=>(await context(await store.profile(id))).exportHistoryForNative(),deleteLegacyHistory:async(id,conversationId,messages)=>(await context(await store.profile(id))).retireHistory(conversationId,messages),onReply:async input=>(await context(await store.profile(input.profileId))).captureNativeMemory(input),resources,now})||null;}catch{logger(JSON.stringify({event:'native_preview_unavailable'}));}
   const statusProvider = provider || createHermesProvider({ ...hermesOptions, dataDir });
   const contexts = new Map(); const pendingContexts = new Map(); const attempts = new Map();
+  const workspaces = new Map(), pendingWorkspaces = new Map(), workspaceDevices = new Map();
+  const workspaceSupported = workspaceFactory !== createHermesWorkspace || builtinMemory && hermesOptions.requireChatGPT === true && typeof hermesOptions.chatgptSession === 'function';
+  async function workspaceFor(profileId) {
+    if(workspaces.has(profileId))return workspaces.get(profileId);
+    if(pendingWorkspaces.has(profileId))return pendingWorkspaces.get(profileId);
+    const creating=Promise.resolve(workspaceFactory({dataDir,profileId,getProfile:id=>store.profile(id),pythonPath:hermesOptions.hermesPython,sourceRoot:hermesOptions.hermesSource,
+      chatgptSession:hermesOptions.chatgptSession,chatgptStatus:hermesOptions.chatgptStatus,
+      isAuthorized:async()=>{const deviceId=workspaceDevices.get(profileId);return !!deviceId&&await store.deviceActive(deviceId,profileId);},
+      assertIdle:async()=>{await contexts.get(profileId)?.assertWorkspaceIdle();if(contexts.get(profileId)?.isBusy()||native?.isBusy(profileId))fail(409,'RUN_ACTIVE','Wait for the current chat reply before opening Hermes workspace.');}})).then(workspace=>{workspaces.set(profileId,workspace);return workspace;});
+    pendingWorkspaces.set(profileId,creating);
+    try{return await creating;}finally{pendingWorkspaces.delete(profileId);}
+  }
   let workerActive = false; let closing = false;let closingTask;
   const jobs = [],eventStreams=new Set();
   function next() {
@@ -36,9 +51,10 @@ export async function createFamilyServer({ dataDir, publicDir, provider, integra
     workerActive = true;
     Promise.resolve().then(async () => {
       const current = await store.profile(job.input.profileId);
+      if(workspaces.get(job.input.profileId)?.isBusy())fail(409,'HERMES_WORKSPACE_ACTIVE','Stop Hermes workspace before using regular chat.');
       if (!current || current.disabled || (current.childModeRevision || 0) !== job.input.childModeRevision || (current.childMode === true) !== job.input.childMode || job.input.signal?.aborted) throw new Error('Profile settings changed. Send your message again.');
       const release=await resources.acquire({kind:'cloud',signal:job.input.signal});
-      try{const latest=await store.profile(job.input.profileId);if(!latest||latest.disabled||(latest.childModeRevision||0)!==job.input.childModeRevision||(latest.childMode===true)!==job.input.childMode||(latest.policyRevision||0)!==(job.input.policyRevision||0)||job.input.signal?.aborted)throw new Error('Profile settings changed. Send your message again.');const allowedConnectionTools=connectionToolNames(latest,{memoryEnabled:!!memoryFactory});if(job.input.useIntegrations&&!allowedConnectionTools.length)fail(403,'TOOL_PERMISSION','Your family owner needs to enable a connected tool for this profile.');return await job.provider.run({...job.input,allowedConnectionTools,permissionRevision:policyRevision(latest)});}finally{release();}
+      try{const latest=await store.profile(job.input.profileId);if(workspaces.get(job.input.profileId)?.isBusy())fail(409,'HERMES_WORKSPACE_ACTIVE','Stop Hermes workspace before using regular chat.');if(!latest||latest.disabled||(latest.childModeRevision||0)!==job.input.childModeRevision||(latest.childMode===true)!==job.input.childMode||(latest.policyRevision||0)!==(job.input.policyRevision||0)||job.input.signal?.aborted)throw new Error('Profile settings changed. Send your message again.');const allowedConnectionTools=connectionToolNames(latest,{memoryEnabled:!!memoryFactory});if(job.input.useIntegrations&&!allowedConnectionTools.length)fail(403,'TOOL_PERMISSION','Your family owner needs to enable a connected tool for this profile.');return await job.provider.run({...job.input,allowedConnectionTools,permissionRevision:policyRevision(latest),...(builtinMemory?{builtinMemoryAllowed:job.input.builtinMemoryAllowed!==false&&canUseCapability(latest,'memory')}:{})});}finally{release();}
     }).then(job.resolve, job.reject).finally(() => { workerActive = false; next(); });
   }
   function queuedRun(agent, input) {
@@ -55,13 +71,16 @@ export async function createFamilyServer({ dataDir, publicDir, provider, integra
     const pending = (async () => {
       const directory = store.directory(profile.id);
       const integrations = await integrationsForProfile?.(profile, { dataDir: directory, configDir: dataDir });
-      const agent = provider || createHermesProvider({ ...hermesOptions, dataDir: directory, family: true, memoryEnabled: !!memoryFactory, profileId: profile.id });
+      const builtinMemoryHome = builtinMemory ? await prepareHermesWorkspace({ profileId: profile.id, profileDataDir: directory }) : '';
+      const agent = provider || createHermesProvider({ ...hermesOptions, dataDir: builtinMemoryHome ? dirname(builtinMemoryHome) : directory, family: true, memoryEnabled: !!memoryFactory, profileId: profile.id, builtinMemoryHome });
       const app = await createPersonalGateway({ dataDir: directory, publicDir, now, logger,
-        profile: { ...profile, configDir: dataDir }, memoryFactory, publicOrigin,resources,
+        profile: { ...profile, configDir: dataDir }, memoryFactory,
+        builtinMemoryFactory: builtinMemory ? options => createHermesMemory({ ...options, command: () => agent.memoryCommand() }) : null,
+        publicOrigin,resources,
         validateDevice: id => store.deviceActive(id, profile.id),
         resolveProfile: () => store.profile(profile.id),
         onCalendarToken: token => store.recordCalendarToken(profile.id, token),
-        onConnectionsChanged:()=>{void native?.invalidate(profile.id).catch(()=>logger(JSON.stringify({event:'native_context_invalidated'})));},nativeBusy:()=>native?.isBusy(profile.id)===true,
+        onConnectionsChanged:()=>{void native?.invalidate(profile.id).catch(()=>logger(JSON.stringify({event:'native_context_invalidated'})));},nativeBusy:()=>native?.isBusy(profile.id)===true||workspaces.get(profile.id)?.isBusy()===true,
         provider: { status: () => agent.status(), run: input => queuedRun(agent, { ...input, profileId: profile.id }) }, integrations });
       if ((await store.profile(profile.id))?.disabled) { await app.close(); fail(403, 'PROFILE_DISABLED', 'This profile is disabled.'); }
       await app.refreshProfile(); contexts.set(profile.id, app); return app;
@@ -105,6 +124,7 @@ export async function createFamilyServer({ dataDir, publicDir, provider, integra
     await store.revoke(device.id);
     await contexts.get(device.profileId)?.revokeDevice(device.id);
     await native?.cancelDevice(device.profileId,device.id);
+    if(workspaceDevices.get(device.profileId)===device.id){workspaceDevices.delete(device.profileId);await workspaces.get(device.profileId)?.invalidate();}
   }
   const server = http.createServer(async (req, res) => {
     req.nemoPublicOrigin = publicOrigin;
@@ -141,7 +161,7 @@ export async function createFamilyServer({ dataDir, publicDir, provider, integra
       }
       if (req.method === 'GET' && path === '/api/session') {
         const status = statusProvider.status();
-        return json(res, 200, { authenticated: !!auth, provider: 'Hermes', connected: !!status.connected, ...(auth ? { profile: publicProfile(auth.profile), device: { id: auth.device.id, name: auth.device.name, expiresAt: auth.device.expiresAt }, model: status.model || '', connectionMode: 'readonly-mcp', memoryMode: memoryFactory ? 'profile-gbrain' : 'chat-history', ...publicPlanUsage(status) } : {}) });
+        return json(res, 200, { authenticated: !!auth, provider: 'Hermes', connected: !!status.connected, ...(auth ? { profile: publicProfile(auth.profile), device: { id: auth.device.id, name: auth.device.name, expiresAt: auth.device.expiresAt }, model: status.model || '', connectionMode: 'readonly-mcp', memoryMode: builtinMemory ? 'profile-hermes' : memoryFactory ? 'profile-gbrain' : 'chat-history', hermesWorkspaceAvailable:workspaceSupported&&auth.profile.role==='owner'&&loopback(req)&&!linked&&/^(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(host), ...publicPlanUsage(status) } : {}) });
       }
       if (req.method === 'POST' && ['/api/pair', '/api/pair/preview'].includes(path)) {
         if (auth && path === '/api/pair') fail(409, 'ALREADY_PAIRED', 'Sign out before pairing a different profile.');
@@ -213,6 +233,24 @@ export async function createFamilyServer({ dataDir, publicDir, provider, integra
           const signedOut = result.revokedDevices.some(device => device.id === auth.device.id);
           return json(res, 200, { ok: true, signedOut }, signedOut ? { 'Set-Cookie': cookie(req, '', 0) } : {});
         }
+        if(path.startsWith('/api/hermes-workspace/')){
+          isOwner(auth);
+          if(auth.profile.childMode||auth.profile.disabled||!loopback(req)||linked||req.nemoPhoneLink||!/^(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(host)||req.headers['cf-connecting-ip']||req.headers['x-forwarded-for'])fail(403,'LOCAL_OWNER_REQUIRED','Open Hermes workspace as the owner on this computer.');
+          if(!workspaceSupported)fail(503,'HERMES_WORKSPACE_SETUP','Prepare the included Hermes assistant and connect ChatGPT first.');
+          if(!req.headers['x-nemo-profile'])fail(409,'PROFILE_CHANGED','Reload Nemo to confirm your profile.');
+          if(!workspaceDevices.has(auth.profile.id)||!workspaces.get(auth.profile.id)?.isBusy()&&!pendingWorkspaces.has(auth.profile.id))workspaceDevices.set(auth.profile.id,auth.device.id);
+          const workspace=await workspaceFor(auth.profile.id);
+          if(req.method==='GET'&&path==='/api/hermes-workspace/status')return json(res,200,await workspace.status());
+          if(req.method==='POST'){
+            const input=await body(req);
+            const keys={start:[],prepare:[],prompt:['message'],respond:['id','result'],stop:[]},action=path.slice('/api/hermes-workspace/'.length);
+            if(!keys[action]||Object.keys(input).some(key=>!keys[action].includes(key)))fail(400,'HERMES_WORKSPACE_INPUT','Use the displayed Hermes workspace controls.');
+            if(['start','prepare','prompt'].includes(action)&&(contexts.get(auth.profile.id)?.isBusy()||native?.isBusy(auth.profile.id)))fail(409,'RUN_ACTIVE','Wait for the current chat reply before opening Hermes workspace.');
+            if(workspaceDevices.get(auth.profile.id)!==auth.device.id)fail(403,'WORKSPACE_DEVICE','Use the device that opened this Hermes workspace.');
+            return json(res,200,await workspace[action](...(action==='prompt'||action==='respond'?[input]:[])));
+          }
+          fail(404,'HERMES_WORKSPACE_ROUTE','Hermes workspace control not found.');
+        }
         if(path.startsWith('/api/native/')){
           if(req.method==='GET'&&path==='/api/native/status')return json(res,200,native?native.status(auth.profile.id):{available:false,verified:false,preview:true,tools:0});
           if(!native)fail(503,'NATIVE_SETUP','The host has not enabled the chat preview. Continue in the main chat.');
@@ -235,7 +273,11 @@ export async function createFamilyServer({ dataDir, publicDir, provider, integra
           if(taskRoute&&req.method==='POST'&&taskRoute[2]){const input=await body(req);if(taskRoute[2]==='/answer'){if(Object.keys(input).some(key=>!['questionId','answers'].includes(key)))fail(400,'NATIVE_INPUT','Answer only the displayed questions.');return json(res,200,await native.answer(auth.profile.id,taskRoute[1],{...input,deviceId:auth.device.id}));}if(Object.keys(input).length)fail(400,'NATIVE_INPUT','Use the displayed task control.');return json(res,200,taskRoute[2]==='/extend'?await native.extend(auth.profile.id,taskRoute[1],{deviceId:auth.device.id}):await native.stop(auth.profile.id,taskRoute[1]));}
           fail(404,'NATIVE_ROUTE','Preview operation not found.');
         }
-        if (req.method === 'GET' && path === '/api/capabilities') return json(res, 200, capabilitySnapshot({ profile: auth.profile, provider: statusProvider.status(), readiness: {...await (await context(auth.profile)).capabilityReadiness(),native:native?.status(auth.profile.id)} }));
+        if (req.method === 'GET' && path === '/api/capabilities') {
+          const localOwner=workspaceSupported&&auth.profile.role==='owner'&&loopback(req)&&!linked&&/^(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(host)&&!req.headers['cf-connecting-ip']&&!req.headers['x-forwarded-for'];
+          const workspace=localOwner?await workspaces.get(auth.profile.id)?.status().catch(()=>null):null;
+          return json(res, 200, capabilitySnapshot({ profile: auth.profile, provider: statusProvider.status(), readiness: {...await (await context(auth.profile)).capabilityReadiness(),native:native?.status(auth.profile.id),...(localOwner?{hermesWorkspace:{available:true,...workspace}}:{})} }));
+        }
         if (path.startsWith('/api/memory') && !req.headers['x-nemo-profile']) fail(409, 'PROFILE_CHANGED', 'Reload Memory to confirm your signed-in profile.');
         if (req.method === 'GET' && path === '/api/profiles') { isOwner(auth); return json(res, 200, { profiles: await store.profiles() }); }
         if (req.method === 'POST' && path === '/api/profiles') { isOwner(auth); const input = await body(req); return json(res, 201, { profile: await store.create(input.name, input.childMode === undefined ? false : input.childMode) }); }
@@ -289,7 +331,7 @@ export async function createFamilyServer({ dataDir, publicDir, provider, integra
         if (req.method === 'POST' && path === '/api/logout') { await body(req); await revokeDevice(auth.device); return json(res, 200, { ok: true }, { 'Set-Cookie': cookie(req, '', 0) }); }
         const capability=path.startsWith('/api/gmail')?'gmail':path.startsWith('/api/calendar')?'calendar':path.startsWith('/api/memory')?'memory':path.startsWith('/api/leave')?'reminders':null;
         if(capability&&!canUseCapability(auth.profile,capability))fail(403,'TOOL_PERMISSION','Your family owner can enable this tool in Family.');
-        if (path.startsWith('/api/memory') && !memoryFactory) fail(410, 'MEMORY_DEFERRED', 'Saved memory is not connected. Your private conversations are available in History.');
+        if (path.startsWith('/api/memory') && !memoryFactory && !builtinMemory) fail(410, 'MEMORY_DEFERRED', 'Saved memory is not connected. Your private conversations are available in History.');
         const app = await context(auth.profile);
         if(req.method==='GET'&&path==='/api/tasks'){
           const main=(await app.tasks()).map(task=>({...task,source:'main'}));let nativeTasks=[],nativeTasksAvailable=!!native?.list,notice=null;
@@ -315,6 +357,7 @@ export async function createFamilyServer({ dataDir, publicDir, provider, integra
           if (req.method === 'GET' && !historyRoute[2]) return json(res, 200, await app.history(historyRoute[1]));
           if (req.method === 'POST' && historyRoute[2]) { await body(req); await app.clearHistory(historyRoute[1]); return json(res, 200, { ok: true }); }
         }
+        if(req.method==='POST'&&path==='/api/chat'&&workspaces.get(auth.profile.id)?.isBusy())fail(409,'HERMES_WORKSPACE_ACTIVE','Stop Hermes workspace before using regular chat.');
         return app.server.emit('request', req, res);
       }
       if (!['GET', 'HEAD'].includes(req.method)) fail(405, 'METHOD', 'Method not allowed.');
@@ -338,6 +381,21 @@ export async function createFamilyServer({ dataDir, publicDir, provider, integra
   // logout and work without an open browser.
   for (const profile of await store.profiles()) if (!profile.disabled) { try { await context(profile); } catch (error) { logger(JSON.stringify({ event: 'profile_unavailable', profileId: profile.id, name: error.name })); } }
   return { server, profiles: store, phoneLink,
-    close() { if(closingTask)return closingTask;closing = true;for(const controller of eventStreams)controller.abort();passkeys.close();phoneDispatch.close(); for (const job of jobs.splice(0)) job.reject(new Error('Nemo is restarting.'));closingTask=(async()=>{const results=await Promise.allSettled([phoneLink?.close(),native?.close(),...[...contexts.values()].map(app=>app.close())]);resources.close();server.closeIdleConnections();await new Promise(done=>server.close(done));const failed=results.find(result=>result.status==='rejected');if(failed)throw failed.reason;})();return closingTask; },
+    close() {
+      if(closingTask)return closingTask;
+      closing = true;for(const controller of eventStreams)controller.abort();passkeys.close();phoneDispatch.close();
+      for (const job of jobs.splice(0)) job.reject(new Error('Nemo is restarting.'));
+      const operation=(async()=>{
+        await Promise.allSettled(pendingWorkspaces.values());
+        const results=await Promise.allSettled([phoneLink?.close(),native?.close(),...[...workspaces.values()].map(workspace=>workspace.close()),...[...contexts.values()].map(app=>app.close())]);
+        resources.close();server.closeIdleConnections();await new Promise(done=>server.close(done));
+        const failed=results.find(result=>result.status==='rejected');if(failed)throw failed.reason;
+      })();
+      closingTask=operation;
+      // Preserve the same workspace objects so a failed native close can be
+      // retried. All routes remain closed to new work throughout the retry.
+      void operation.catch(()=>{if(closingTask===operation)closingTask=null;});
+      return operation;
+    },
   };
 }

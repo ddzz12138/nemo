@@ -19,3 +19,77 @@ test('a partial deletion remains an explicit partial result',async()=>{const f=a
 test('disconnected memory disables adding and exposes explicit local setup',async()=>{const f=await setup(path=>path==='/api/memory/board'?response(board([],false)):null);assert.equal(f.id('memory-add').disabled,true);assert.equal(f.id('memory-enable').hidden,false);assert.match(f.id('memory-summary').textContent,/worth remembering/);});
 test('automatic learning control changes only the learning setting',async()=>{let change;const f=await setup((path,options)=>{if(path==='/api/memory/learning'){change=JSON.parse(options.body);return response({ok:true});}});f.id('memory-learning').checked=false;f.id('memory-learning').fire('change');await f.app.idle();assert.deepEqual(change,{enabled:false});assert.equal(f.calls.some(call=>call.path.includes('gmail/cache')),false);});
 test('untrusted memory text is rendered as text and source evidence remains inspectable',async()=>{const unsafe={...item,text:'<script>untrusted</script>'};const f=await setup(path=>path==='/api/memory/board'?response(board([unsafe])):null);assert.match(f.id('memory-list').textContent,/<script>untrusted<\/script>/);assert.equal(all(f.doc.body).some(node=>node.tagName==='SCRIPT'),false);f.app.chooseSummary([{id:item.id,revision:'r1',text:item.text}]);await f.app.idle();assert.match(f.id('memory-editor').textContent,/I prefer concise answers/);});
+
+const nativeItem={...item,id:'hermes:user:'+'a'.repeat(64),target:'user',sourceLabel:'Hermes memory'};
+const nativeBoard=(items=[nativeItem])=>({...board(items),kind:'hermes-builtin',automatic:true,learning:{enabled:true,processing:'hermes'}});
+async function nativeSetup(handler){
+ const f=memoryDom(),calls=[];
+ const fetch=async(path,options)=>{
+  calls.push({path,options});const custom=await handler?.(path,options);if(custom)return custom;
+  if(path==='/api/memory/board')return response(nativeBoard());
+  if(path.startsWith('/api/memory/fact'))return response({ok:true,item:{...nativeItem,text:nativeItem.text}});
+  throw Error('Unexpected native Memory route: '+path);
+ };
+ fetch.memoryMode='profile-hermes';const app=createMemoryApp(f.doc,fetch);await app.ready;return{...f,app,calls};
+}
+
+test('native Memory is automatic with no engine, Off, source-copy or semantic-search controls',async()=>{
+ const f=await nativeSetup();assert.equal(f.id('memory-automatic').textContent,'Memory is automatic. Nemo keeps useful details as you chat.');assert.equal(f.id('memory-automatic').hidden,false);assert.match(f.id('memory-list').textContent,/Saved detail/);
+ assert.equal(f.id('memory-learning'),null);assert.equal(f.id('memory-enable'),null);assert.equal(f.id('memory-gmail-source'),null);
+ assert.doesNotMatch(f.doc.body.textContent,/Hermes|GBrain|Ollama|turn learning off|Enable local memory/);
+ f.id('memory-search').value='concise';f.id('memory-search-form').fire('submit');await f.app.idle();
+ assert.equal(f.calls.length,1);assert.match(f.id('memory-list').textContent,/concise answers/);
+ f.button('Memory settings').click();assert.match(f.id('memory-settings').textContent,/sent with ChatGPT requests/);
+ assert.match(f.id('memory-settings').textContent,/Clearing does not stop future learning/);
+});
+
+test('a native initial read failure offers retry without exposing legacy setup or Off controls',async()=>{
+ let fail=true;const f=await nativeSetup(path=>path==='/api/memory/board'&&fail?response({error:'Stored notes could not be read.'},503):null);
+ assert.equal(f.id('memory-summary').textContent,'Your memories could not be read.');assert.equal(f.id('memory-retry').hidden,false);
+ assert.equal(f.id('memory-learning'),null);assert.equal(f.id('memory-enable'),null);assert.equal(f.button('Memory settings').disabled,true);
+ assert.equal(f.id('memory-add').disabled,true);fail=false;f.button('Try again').click();await f.app.idle();
+ assert.equal(f.id('memory-retry').hidden,true);assert.equal(f.id('memory-message').hidden,true);assert.match(f.id('memory-list').textContent,/concise/);
+});
+
+test('native summary editing uses the saved note and revision without a separate correction engine',async()=>{
+ let saved;const f=await nativeSetup((path,options)=>{if(path==='/api/memory/edit'){saved=JSON.parse(options.body);return response({ok:true});}});
+ f.app.chooseSummary([{id:nativeItem.id,revision:nativeItem.revision,text:nativeItem.text}]);await f.app.idle();
+ assert.equal(f.id('memory-editor-text').value,nativeItem.text);assert.equal(f.id('memory-editor-text').maxLength,1375);assert.equal(f.id('memory-editor-topic').disabled,true);
+ f.id('memory-editor-text').value='You prefer answers with examples.';f.button('Save memory').click();await f.app.idle();
+ assert.deepEqual(saved,{id:nativeItem.id,revision:'r1',title:'You prefer answers with examples.',content:'You prefer answers with examples.',category:'preferences'});
+ assert.equal(f.calls.some(call=>call.path==='/api/memory/correct'),false);
+});
+
+test('native Clear previews before deletion, cancellation is safe, and partial receipts survive refresh',async()=>{
+ let previews=0,deletes=0;const f=await nativeSetup((path,options)=>{
+  if(path==='/api/memory/clear/preview'){previews++;assert.deepEqual(JSON.parse(options.body),{scope:'notes'});return response({ok:true,confirmation:'e'.repeat(64),expiresAt:Date.now()+60000,summary:'Clear both memory stores?',residuals:['History remains.']});}
+  if(path==='/api/memory/delete'){deletes++;return response({ok:false,receipt:{state:'partial',message:'One store could not be cleared.'}});}
+ });
+ f.button('Memory settings').click();f.button('Clear memories').click();await f.app.idle();assert.equal(previews,1);assert.equal(deletes,0);
+ f.button('Cancel').click();assert.equal(deletes,0);f.id('memory-clear').click();await f.app.idle();f.id('memory-confirm-delete').click();f.id('memory-confirm-delete').click();await f.app.idle();
+ assert.equal(deletes,1);assert.match(f.id('memory-message').textContent,/Some memories may remain.*could not be cleared/);assert.match(f.id('memory-list').textContent,/concise/);
+ assert.equal(f.app.state.confirmation,null);
+});
+
+test('native Forget removes a note rather than offering a paused-memory state',async()=>{
+ let payload;const f=await nativeSetup((path,options)=>{if(path==='/api/memory/delete/preview'){payload=JSON.parse(options.body);return response({ok:true,confirmation:'f'.repeat(64),expiresAt:Date.now()+60000,summary:'Forget this saved note?',residuals:[]});}});
+ f.button('Edit memory: '+nativeItem.text).click();await f.app.idle();f.button('Forget memory').click();await f.app.idle();
+ assert.deepEqual(payload,{id:nativeItem.id,action:'forget'});assert.equal(f.id('memory-confirm-delete').textContent,'Forget memory');
+ assert.equal(f.button('Delete memory').hidden,true);
+});
+
+test('a native partial-clear receipt is retained when refreshing the remaining notes also fails',async()=>{
+ let failed=false;const f=await nativeSetup(path=>{
+  if(path==='/api/memory/clear/preview')return response({ok:true,confirmation:'0'.repeat(64),expiresAt:Date.now()+60000,summary:'Clear notes?',residuals:[]});
+  if(path==='/api/memory/delete'){failed=true;return response({ok:false,receipt:{state:'partial',message:'The second store remains.'}});}
+  if(path==='/api/memory/board'&&failed)return response({error:'Refresh could not read notes.'},503);
+ });
+ f.button('Memory settings').click();f.id('memory-clear').click();await f.app.idle();f.id('memory-confirm-delete').click();await f.app.idle();
+ assert.match(f.id('memory-message').textContent,/Some memories may remain.*second store remains.*could not read/);assert.equal(f.id('memory-retry').hidden,false);
+});
+
+test('native partial receipts cannot turn an unrelated failed save into success',async()=>{
+ const f=await nativeSetup(path=>path==='/api/memory/notes'?response({ok:false,receipt:{state:'partial',message:'This is not a save result.'}}):null);
+ f.button('+ Add').click();await f.app.idle();f.id('memory-editor-text').value='A new note.';f.button('Save memory').click();await f.app.idle();
+ assert.equal(f.id('memory-editor').open,true);assert.match(f.id('memory-message').textContent,/could not complete/);assert.doesNotMatch(f.id('memory-message').textContent,/Memory saved/);
+});

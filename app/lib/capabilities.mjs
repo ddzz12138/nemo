@@ -7,7 +7,14 @@ export function capabilitySnapshot({ profile, provider = {}, readiness = {} } = 
   const classification = profileClassification(profile);
   const restricted = ['child', 'unclassified'].includes(classification);
   const item = (id, title, state, reason, setup = null) => ({ id, title, state, reason, setup });
-  const pending = (id, title) => ({ ...item(id, title, canUseCapability(profile,id) ? 'needs_setup' : 'disabled', canUseCapability(profile,id) ? 'Not available in this version. The host will see when setup is supported.' : 'Ask the host to review this profile’s access.'), group:'more' });
+  const nativePatterns={research:/^(?:web_|search)/,browser:/^browser_/,files:/^(?:read_file|write_file|patch|file_)/,terminal:/^(?:terminal|process)/,desktop:/^(?:computer|desktop)/,agents:/^delegate_task$/,schedule:/^cron/,voice:/^(?:text_to_speech|speech_|voice_)/,media:/^(?:image_|video_|vision_)/,extensions:/^(?:skills_list|skill_view|skill_manage)$/};
+  const pending = (id, title) => {
+    if(profile.role==='owner'&&readiness.hermesWorkspace?.available&&nativePatterns[id]){
+      const workspace=readiness.hermesWorkspace,ready=workspace.busy===true&&(workspace.readiness?.tools||[]).some(name=>nativePatterns[id].test(name));
+      return {...item(id,title,ready?'ready':'needs_setup',ready?'Available through the local owner’s Hermes workspace.':'Open Hermes workspace to check its native tools and any required setup.','/desktop.html#hermes'),group:'more'};
+    }
+    return { ...item(id, title, canUseCapability(profile,id) ? 'needs_setup' : 'disabled', canUseCapability(profile,id) ? 'Not available in this version. The host will see when setup is supported.' : 'Ask the host to review this profile’s access.'), group:'more' };
+  };
   const capabilities = [
     item('chat', 'Chat with Hermes', provider.connected && readiness.chat ? 'ready' : 'needs_setup', provider.connected && readiness.chat ? 'Uses your private Nemo conversation.' : provider.connected ? 'Hermes was located. Send a message to verify it in this server session.' : 'The host needs to connect Hermes.', '/setup.html'),
     item('history', 'Conversation history', 'ready', 'Your private conversations, with search and native chat controls.', '/history.html'),
@@ -15,7 +22,7 @@ export function capabilitySnapshot({ profile, provider = {}, readiness = {} } = 
     ...(readiness.native?.available?[item('native_preview','New chat connection',readiness.native.verified?'ready':'needs_setup',readiness.native.verified?'Private native chat with your permitted read tools and local Memory learning.':'Private chat preview. Connected reads use your saved permission. Send a message to verify the connection.','/native-chat.html')]:[]),
     item('gmail', 'Gmail', readiness.gmail ? 'ready' : 'needs_setup', readiness.gmail ? 'Your Google account is connected. Reads require your Connections consent.' : 'Connect your own Google account; access is read-only.', '/gmail-connect.html'),
     item('calendar', 'iPhone Calendar', readiness.calendar ? 'ready' : 'needs_setup', 'Reads your latest uploaded snapshot. Calendar stays outside Memory.', '/calendar-setup.html'),
-    item('memory', 'Your Memory', readiness.memory ? 'ready' : 'needs_setup', readiness.memory ? 'Your private local Memory engine is connected.' : 'Enable and check the local Memory engine.', '/memory.html'),
+    item('memory', 'Your Memory', readiness.memory ? 'ready' : 'needs_setup', readiness.memoryKind === 'hermes-builtin' ? 'Hermes remembers useful details automatically. View, forget or clear your private saved notes.' : readiness.memory ? 'Your private local Memory engine is connected.' : 'Enable and check the local Memory engine.', '/memory.html'),
     item('reminders', 'Leave reminders', 'needs_setup', 'Transport setup and phone notification permission must be checked.', '/leave.html'),
     ...[['research','Web research'],['browser','Browser automation'],['files','Files and documents'],['terminal','Terminal and code'],['desktop','Computer control'],['tasks','Background tasks'],['agents','Subagents and reviews'],['schedule','Scheduling'],['voice','Voice conversation'],['media','Image and video tools'],['extensions','Skills, MCP and plugins'],['models','Model controls and Mixture of Agents']].map(([id,title]) => pending(id,title)),
   ].map(capability=>!canUseCapability(profile,capability.id)&&capability.id!=='native_preview'?{...capability,state:'disabled',reason:classification==='child'?'Your family owner can enable this tool for your profile.':'Ask the host to review this profile’s access.'}:capability);

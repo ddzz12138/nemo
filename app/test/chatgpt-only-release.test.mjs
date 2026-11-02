@@ -103,12 +103,14 @@ async function serverFixture(t, options = {}) {
   }
   return { app, dataDir, owner, request };
 }
-test('public server pins ChatGPT and exposes no Memory/native or local-only school workflow', async t => {
+test('public server pins ChatGPT with native memory and exposes no alternate-provider or local-only school workflow', async t => {
   let credentialCalls = 0;
-  const f = await serverFixture(t, { hermesOptions: { chatgptSession: async () => { credentialCalls++; return null; } } });
-  const session = await f.request('/api/session'); assert.equal(session.status, 200); assert.equal(session.data.memoryMode, 'chat-history');
+  const f = await serverFixture(t, { hermesOptions: { launcher: join(process.cwd(), '.work', 'synthetic-missing-hermes-launcher.cmd'), chatgptSession: async () => { credentialCalls++; return null; } } });
+  const session = await f.request('/api/session'); assert.equal(session.status, 200); assert.equal(session.data.memoryMode, 'profile-hermes');
   assert.equal(session.data.inference, undefined); assert.equal(session.data.planUsage.provider, 'chatgpt'); assert.equal(session.data.connected, false);
-  assert.equal((await f.request('/api/memory/board')).status, 410);
+  assert.equal((await f.request('/api/memory/board')).status, 503, 'An unavailable synthetic runtime must report unavailable, never fall back to a real account or legacy engine');
+  const automatic = await f.request('/api/memory/learning', { enabled: false });
+  assert.equal(automatic.status, 410); assert.equal(automatic.data.code, 'MEMORY_AUTOMATIC');
   assert.equal((await f.request('/api/native/status')).data.available, false);
   const notice = await f.request('/api/gmail/notices/search', { query: 'school' }); assert.notEqual(notice.status, 200);
   assert.equal(credentialCalls, 0);

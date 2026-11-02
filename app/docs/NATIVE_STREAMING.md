@@ -1,5 +1,9 @@
 # Live task updates and reconnects
 
+This document describes the scoped family-native preview and its phone updates,
+separate from the direct-local [owner Hermes workspace](HERMES_WORKSPACE.md).
+The owner workspace uses Hermes’s native tools and approvals.
+
 Native chat and Tasks use an authenticated server-sent notification stream.
 An update prompts the phone to fetch the current private task view. Native text,
 waiting labels, questions, checklists, tools and post-reply Memory outcomes share

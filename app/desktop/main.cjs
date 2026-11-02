@@ -6,11 +6,12 @@ const { existsSync } = require('node:fs');
 const { parseBootstrap, utilityLaunchOptions, allowedExternal, registrationOriginForLaunch, setupRequest, openLocalSpace, loginItemOptions, CHATGPT_USAGE_URL } = require('./contracts.cjs');
 const { chatLaunch, chatNavigation, authorizeDesktopSetup } = require('./chat-contracts.cjs');
 const { openDesktopStartup } = require('./startup.cjs');
+const { createDesktopShutdown } = require('./shutdown.cjs');
 const { createDesktopGmailAction } = require('./gmail.cjs');
 const { PERSONAL_PARTITION, persistPersonalSession, readPersonalSession } = require('./session.cjs');
 const { openDesktopSettings, createHostAccessAction } = require('./host-access.cjs');
 
-let window, chatOrigin, background, setup, tray, personalStorage, quitting = false;
+let window, chatOrigin, background, setup, tray, personalStorage, shutdown, shutdownRequested = false, quitting = false;
 let serviceOrigin = process.env.NEMO_REGISTRATION_URL || '';
 const smoke = process.env.NEMO_DESKTOP_SMOKE === '1';
 const smokeInstallRuntime = smoke && process.env.NEMO_DESKTOP_SMOKE_INSTALL_RUNTIME === '1';
@@ -25,13 +26,22 @@ else {
   app.on('window-all-closed', () => { /* The host keeps serving the phone until Quit Nemo. */ });
   app.on('before-quit', event => {
     if (quitting) return;
-    event.preventDefault(); quitting = true;
-    const cookiesSaved = Promise.resolve(personalStorage?.close()).catch(() => {});
-    background?.postMessage({ type: 'shutdown' });
-    const timer = setTimeout(() => { background?.kill(); app.quit(); }, 5_000);
-    const finish = () => { void Promise.resolve(cookiesSaved).catch(() => {}).then(() => { clearTimeout(timer); app.quit(); }); };
-    background?.once('exit', finish);
-    if (!background) finish();
+    event.preventDefault();
+    if (shutdownRequested) return;
+    shutdownRequested = true;
+    shutdown ||= createDesktopShutdown({ background, saveSession: () => personalStorage?.flush() });
+    void shutdown.request().then(async () => {
+      await personalStorage?.close();
+      quitting = true; app.quit();
+    }).catch(async () => {
+      shutdownRequested = false;
+      if (smoke) { await saveSmoke({ ready: false, stage: 'shutdown-unconfirmed' }); return; }
+      window?.show();
+      const choice = await dialog.showMessageBox(window, { type: 'warning', title: 'Nemo is still stopping',
+        message: 'Nemo could not confirm that its assistant stopped.', detail: 'Keep Nemo open while its running work finishes. Try quitting again when you are ready.',
+        buttons: ['Keep Nemo open', 'Try quitting again'], defaultId: 0, cancelId: 0, noLink: true });
+      if (choice.response === 1) app.quit();
+    });
   });
   app.whenReady().then(start).catch(async () => { if(smoke)await saveSmoke({ready:false,message:'Nemo could not complete its desktop startup check.'});else dialog.showErrorBox('Nemo could not start', 'Close Nemo and open it again. Your saved chats stay on this computer.'); app.quit(); });
 }
@@ -55,6 +65,7 @@ async function start() {
   serviceOrigin = await registrationOriginForLaunch({resourcesPath:process.resourcesPath,appPath:app.getAppPath(),environment:process.env,development:!app.isPackaged});
   const launch = utilityLaunchOptions({ appPath: app.getAppPath(), dataDir, resourcesPath: process.resourcesPath, environment: {...process.env,NEMO_REGISTRATION_URL:serviceOrigin} });
   background = utilityProcess.fork(launch.modulePath, launch.args, launch.options);
+  shutdown = createDesktopShutdown({ background, saveSession: () => personalStorage?.flush() });
   setup = await new Promise((resolve, reject) => {
     // A cold Windows start verifies the complete bundled assistant inventory.
     // Allow the real parent flow at least as long as first-run smoke checks.
@@ -143,7 +154,7 @@ async function start() {
     window.show();
   }
   if(smoke)await saveSmoke({ready:false,stage:'setup-loaded'});
-  background.on('exit', () => { if (!quitting&&!smoke) { window?.show(); dialog.showErrorBox('Nemo needs to reopen', 'The assistant stopped. Quit Nemo from its menu and open it again. Your chats are saved.'); } });
+  background.on('exit', () => { if (!quitting&&!shutdownRequested&&!smoke) { window?.show(); dialog.showErrorBox('Nemo needs to reopen', 'The assistant stopped. Quit Nemo from its menu and open it again. Your chats are saved.'); } });
   if(smoke) {
     const result=await window.webContents.executeJavaScript(`(async()=>{
       if(typeof window.nemoDesktop?.request!=='function')throw new Error('Preload unavailable');

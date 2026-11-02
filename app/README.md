@@ -1,6 +1,6 @@
 # Nemo — Hermes, for your family
 
-**First public version: ChatGPT subscription only.** Use an eligible ChatGPT plan in Nemo’s guided desktop setup. No local AI model, Ollama installation, API key or model download is required or offered. Profiles and chat history stay on the PC; relevant conversation context is sent to ChatGPT for replies. Automatic Memory/embeddings, School notice and alternative-provider previews are deferred. Existing data is preserved.
+**First public version: ChatGPT subscription only.** Use an eligible ChatGPT plan in Nemo’s guided desktop setup. No local AI model, Ollama installation, API key or model download is required or offered. Profiles, chat history and each person's native Hermes memory stay on the PC; relevant context and saved notes are sent to ChatGPT for replies. Memory works automatically. GBrain extraction/embeddings, School notice and alternative-provider previews remain deferred. Existing data is preserved.
 
 
 **Source preview.** The first signed Windows x64 candidate and clean-PC pilot are
@@ -62,6 +62,11 @@ docs/DESKTOP_SETUP.md and docs/REMOTE_SERVICE.md.
 
 ## Current application
 
+- Owner-only **Hermes workspace** on the home PC uses Hermes's native skills,
+  tools and approvals without modifying its source. Native dependency checks
+  determine what can run; family chat retains its current permissions.
+  See [workspace and memory testing](docs/HERMES_WORKSPACE.md).
+
 - Desktop **New Chat**, private conversation history and reopening saved chats
   to continue, with drafts kept separately for each conversation.
 
@@ -74,7 +79,10 @@ docs/DESKTOP_SETUP.md and docs/REMOTE_SERVICE.md.
   with an audit visible to the child. Adults remain private in the application.
 - Google Web OAuth, focused read-only search with pagination, optional bounded
   snippet sync, inspection and clear/stop controls.
-- iPhone Calendar Shortcut uploads. Calendar stays outside Memory.
+- iPhone Calendar Shortcut uploads, kept separately from Hermes's curated notes.
+- Automatic native Hermes memory in each person's private workspace. Open Memory
+  to view, correct, forget or clear saved details; there is no separate engine
+  installation, model download or Memory off switch.
 - Actual live tool activity. Private conversations remain accessible through History.
 - Tools/readiness, family classification, recent reply tasks and stopping a reply.
 - Guided phone setup at `/setup.html`.
@@ -82,13 +90,15 @@ docs/DESKTOP_SETUP.md and docs/REMOTE_SERVICE.md.
   static HTTPS phone interface, encrypted WebRTC, reconnect and optional TURN.
   It stays off until an operator deploys the static interface. Real iPhone
   cellular acceptance is pending; see docs/PHONE_ACCESS_SETUP.md.
-- Experimental Memory, local models and native-provider code remain available for
-  development tests; the public application does not enable them.
+- Experimental GBrain extraction/embeddings, local models and native-provider
+  code remain available for development tests; the public app does not enable them.
 
-Main chat retains the 90-second Hermes budget, six-call cap and roughly two-minute
-timeout. Native chat enforces ten active minutes and up to 64 scoped read calls,
-then pauses for explicit extension. Subagents and powerful computer/action tools
-remain unavailable until their full execution boundaries are implemented.
+Family chat retains the 90-second Hermes budget, six-call cap and roughly two-minute
+timeout. Scoped native chat enforces ten active minutes and up to 64 read calls,
+then pauses for explicit extension. These family workers do not expose subagents
+or powerful computer/action tools. The explicit local-owner
+[Hermes workspace](docs/HERMES_WORKSPACE.md) uses upstream tools and approvals
+with the owner's operating-system access.
 
 ## Install and run
 
@@ -124,7 +134,7 @@ needs real-device verification. Reconnect accounts when moving operating systems
   Web OAuth app with the exact
   `https://YOUR-NEMO-HOST/oauth/gmail/callback` URI. Import its JSON locally with
   `nemo gmail /absolute/path/client.json`; each person then uses Connect Gmail.
-- Automatic Memory and local-model features are deferred; no Ollama models are
+- GBrain extraction/embeddings and local-model features are deferred; no Ollama models are
   required. Previous experimental stores are preserved. Gmail account changes
   fail closed if old Memory copies still need cleanup.
 - Scalekit is optional. Its adapter remains planned; direct Gmail does not need it.
@@ -134,17 +144,28 @@ needs real-device verification. Reconnect accounts when moving operating systems
 ## Privacy
 
 Authenticated devices determine profile identity; model arguments cannot change it.
-Each person has private account grants and chat history. Connections consent
-governs retrieved material sent to ChatGPT. Automatic Memory learning and
-embeddings are disabled in the public app.
+Each person has private account grants, chat history and a private Hermes home.
+Connections consent governs connected-account reads. Hermes automatically manages
+bounded `MEMORY.md` and `USER.md` notes on this PC; relevant notes accompany
+ChatGPT requests and memory decisions use the connected ChatGPT plan. No local
+AI model, extraction worker or embedding service is required.
 
-The existing CLI bridge still uses the host Hermes home with shared context and
-memory injection disabled. Preview native homes are separate per person, with
-shared memory/context injection disabled and a broker-only network policy. That
-in-process policy is not an operating-system sandbox for computer tools. Full
-Docker workers remain a separate rollout step. The administrator can inspect
+The public CLI/desktop bridge runs Hermes in a private home per Nemo person,
+while sharing the sealed runtime files. Existing visible Nemo conversations and
+protected ChatGPT grants stay in their stable locations; old shared-home agent
+session IDs are retired and context is rebuilt from bounded saved messages.
+Only Hermes's native memory tool and the person's approved read-only connections
+are admitted. Native-preview experiments remain separate. The broker-only network
+policy is not an operating-system sandbox for computer tools. Full Docker
+workers remain a separate rollout step. The administrator can inspect
 local storage. Legacy history/backups and preview transcripts are separate from
-the main Nemo History deletion; full native deletion/migration is still pending.
+the main Nemo History deletion; full native-preview deletion/migration is still pending.
+
+Forgetting or clearing Memory changes the native saved notes, not original
+conversations, email, calendar events or backups. Hermes may remember details
+again from later conversation context. Google account changes and source clears
+remain blocked when retained memory copies cannot be verified as cleared; Nemo
+offers an explicit Memory clear flow instead of silently deleting unrelated notes.
 
 ## Development
 

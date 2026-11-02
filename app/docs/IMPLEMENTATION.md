@@ -1,5 +1,12 @@
 # Family-friendly implementation status
 
+The owner now also has a separate direct-local **Hermes workspace**, using the
+unchanged upstream skills, tools, gateway and approvals. It runs with the owner's
+OS access and shares that person's native memory; it is not the isolated family
+worker described below. Children, members, phones and tunnel requests cannot
+open it. See [workspace and memory testing](HERMES_WORKSPACE.md). The remaining
+full-tool/Docker rollout items below apply to the scoped family-worker route.
+
 ## Implemented in this revision
 
 - Portable host configuration and private data locations, preserving legacy data.
@@ -59,7 +66,7 @@
   old subscriptions; polling remains available when streaming fails.
 - Internal exact-action approvals, expiry/replay checks, uncertain-outcome
   reconciliation and parent/subagent budgets. These are tested building blocks;
-  powerful tools and their approval interface are not enabled.
+  powerful tools and their approval interface are not enabled in that scoped preview.
 - Docker policy with private volumes, no network, read-only root, non-root user,
   resource limits and no host directories/devices/socket. Actual two-profile
   isolation and volume resume passed on Windows. The probe image contains no
@@ -75,7 +82,8 @@
    approvals remain separate and no send/write connector tools are enabled.
 2. Build/pin complete Hermes worker images and verify private mounts, network/tool boundaries and
    host approval enforcement on Windows and macOS.
-3. Complete upstream native event reconciliation and powerful action approvals.
+3. Complete upstream native event reconciliation and powerful action approvals
+   for the scoped family-worker route.
    The phone update stream has bounded durable notification replay and read-only
    snapshot recovery. Native question cards
    and checklists are implemented and verified against the installed runtime;
@@ -93,8 +101,8 @@
 Synthetic checks do not need real Gmail/calendar reads or model inference.
 Earlier phone confirmations do not verify new code. Main chat retains its
 six-call / 90-second / two-minute limits. The native preview enforces a ten-minute
-active budget and 64 scoped reads with explicit budget extensions. Subagent and
-action approvals remain building blocks. The old CLI MCP child still performs
+active budget and 64 scoped reads with explicit budget extensions. In that scoped
+preview, subagent and action approvals remain building blocks. The old CLI MCP child still performs
 its own Memory work outside the host GPU pool. No production legacy
 history migration has run. Physical iPhone preview confirmation remains pending.
 Real iPhone passkey enrollment also remains pending; synthetic Chrome tests use

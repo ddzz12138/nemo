@@ -61,6 +61,7 @@
   }
   const nav = make('nav', '', 'nemo-primary-nav'); nav.setAttribute('aria-label', 'Main navigation'); menu.dialog.append(nav);
   for (const [text, href] of [['Chat', '/'], ['History', '/history.html'], ['Tasks', '/tasks.html'], ['Reminders', '/leave.html']]) link(text, href, nav);
+  const memoryLink = link('Memory', '/memory.html', nav); memoryLink.hidden = true;
   const extras = make('div', '', 'nemo-nav-section'); menu.dialog.append(extras);
   const accounts = document.getElementById('integrationsButton');
   if (accounts) {
@@ -101,7 +102,9 @@
     const current = memory?.profile;
     for (const node of [name, identity]) node.textContent = current?.name || 'Profile';
     child.hidden = !current?.childMode;
+    memoryLink.hidden = !current || !['profile-hermes','profile-gbrain'].includes(memory?.memoryMode);
   }
+  menuButton.addEventListener('click', refreshName);
   refreshName();
   // Pages that already load /api/session own their initial identity request.
   // Other controllers share Identity.load(), avoiding competing public reads.
