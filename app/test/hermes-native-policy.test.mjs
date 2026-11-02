@@ -1,14 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm, symlink, unlink } from 'node:fs/promises';
 import { existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve, join } from 'node:path';
+import { resolve, join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createProfileStore } from '../lib/profile-store.mjs';
 import { configureHermesCommand, createHermesEventPolicy, createHermesProvider } from '../lib/hermes.mjs';
 import { toPlanRequest, toHermesCompletion } from '../lib/chatgpt-plan-broker.mjs';
+import { prepareHermesWorkspace } from '../lib/hermes-memory.mjs';
 
 test('native memory only changes fixed toolset and turn flags and requires isolated startup proof', () => {
   const base = ['python', '-I', '-c', 'bootstrap', 'chat', '--toolsets', 'none', '--max-turns', '1'];
@@ -31,6 +32,41 @@ test('native memory cannot activate in local, API-key, non-family or unscoped pr
     assert.throws(() => createHermesProvider({ ...options, dataDir: resolve('synthetic-profile'), builtinMemoryHome: resolve('synthetic-profile/hermes') }), /private ChatGPT profile/);
   }
   assert.throws(() => createHermesProvider({ family: true, requireChatGPT: true, chatgptSession: async () => null, dataDir: resolve('synthetic-profile'), builtinMemoryHome: resolve('outside/hermes') }), /private ChatGPT profile/);
+});
+
+test('native provider accepts the trusted root alias only when it resolves to the same unlinked private profile', async t => {
+  const root = await mkdtemp(resolve('.work/native-provider-alias-')), alias = root + '-configured';
+  let aliasCreated = false, redirectedCreated = false, homeAliasCreated = false, redirected, homeAlias;
+  t.after(async () => {
+    if (homeAliasCreated) await unlink(homeAlias);
+    if (redirectedCreated) await unlink(redirected);
+    if (aliasCreated) await unlink(alias);
+    assert.equal(dirname(root), resolve('.work')); assert.match(root, /native-provider-alias-/);
+    await rm(root, { recursive: true, force: true, maxRetries: 6, retryDelay: 100 });
+  });
+  const profiles = await createProfileStore({ dataDir: root }), owner = await profiles.owner();
+  const home = await prepareHermesWorkspace({ profileId: owner.id, profileDataDir: profiles.directory(owner.id) });
+  await symlink(root, alias, process.platform === 'win32' ? 'junction' : 'dir'); aliasCreated = true;
+  const dataDir = join(alias, 'profiles', owner.id);
+  assert.notEqual(resolve(home), resolve(dataDir, 'hermes'), 'exercise distinct logical spellings of the same workspace');
+  let credentialCalls = 0;
+  const options = { hermesPython: process.execPath, hermesSource: resolve('vendor/hermes-source'), dataDir,
+    family: true, profileId: owner.id, builtinMemoryHome: home, requireChatGPT: true,
+    chatgptSession: async () => { credentialCalls++; throw new Error('Do not open a real account'); } };
+  const agent = createHermesProvider(options);
+  assert.match((await agent.memoryCommand())[4], /hermes_memory\.py/);
+  assert.equal(credentialCalls, 0);
+  const other = await profiles.create('Synthetic other person');
+  const otherHome = await prepareHermesWorkspace({ profileId: other.id, profileDataDir: profiles.directory(other.id) });
+  assert.throws(() => createHermesProvider({ ...options, builtinMemoryHome: otherHome }), /private ChatGPT profile/);
+  assert.throws(() => createHermesProvider({ ...options, profileId: other.id }), /private ChatGPT profile/);
+  homeAlias = join(root, 'redirected-home');
+  await symlink(home, homeAlias, process.platform === 'win32' ? 'junction' : 'dir'); homeAliasCreated = true;
+  assert.throws(() => createHermesProvider({ ...options, builtinMemoryHome: homeAlias }), /private ChatGPT profile/);
+  redirected = join(root, 'profiles', '00000000-0000-0000-0000-000000000000');
+  await symlink(profiles.directory(owner.id), redirected, process.platform === 'win32' ? 'junction' : 'dir'); redirectedCreated = true;
+  assert.throws(() => createHermesProvider({ ...options, dataDir: join(alias, 'profiles', '00000000-0000-0000-0000-000000000000'), profileId: '00000000-0000-0000-0000-000000000000' }), /private ChatGPT profile/);
+  assert.throws(() => createHermesProvider({ ...options, dataDir: redirected, builtinMemoryHome: join(redirected, 'hermes'), profileId: '00000000-0000-0000-0000-000000000000' }), /private ChatGPT profile/);
 });
 
 test('ChatGPT broker admits native memory only when permitted and preserves bounded native batches', () => {

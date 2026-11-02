@@ -119,6 +119,14 @@ def main():
     marker = json.loads((home / "nemo-profile.json").read_text(encoding="utf-8"))
     if marker != {"version": 1, "profileId": profile_id}:
         raise RuntimeError("Wrong private Hermes owner")
+    # The upstream configuration overlay disables automatic crash recovery for
+    # this launch. Confirm it before importing the gateway: reopening in Nemo
+    # restores a conversation, never authorizes another run of its last action.
+    from hermes_cli.managed_scope import get_managed_dir, load_managed_config
+    policy = get_managed_dir()
+    if (policy is None or not policy.resolve().is_relative_to(home.resolve() / "scratch")
+            or load_managed_config() != {"desktop": {"auto_continue": {"enabled": False}}}):
+        raise RuntimeError("Workspace recovery policy unavailable")
     sys.stdout = RpcOutput(sys.stdout)
     # These are upstream-supported launch overrides, not provider patches. The
     # actual OAuth credential remains in the host's broker, never in this worker.

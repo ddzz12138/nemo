@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, lstatSync, realpathSync } from 'node:fs';
 import { join, resolve, isAbsolute, dirname, basename } from 'node:path';
 import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
@@ -101,6 +101,24 @@ export function validateHermesResult(terminal) {
   return terminal;
 }
 
+function privateMemoryHomeMatches(home, dataDir, profileId) {
+  const logicalProfile = resolve(dataDir), logicalHome = resolve(home);
+  // Fixed command discovery may precede profile creation. Existing homes must
+  // prove their physical identity; only the configured root can be an alias.
+  if (!existsSync(logicalProfile) && !existsSync(logicalHome)) return logicalHome === resolve(logicalProfile, 'hermes');
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(profileId || '')
+      || basename(logicalProfile) !== profileId || basename(dirname(logicalProfile)) !== 'profiles') return false;
+  try {
+    const root = realpathSync(dirname(dirname(logicalProfile))), physicalProfile = join(root, 'profiles', profileId), physicalHome = join(physicalProfile, 'hermes');
+    for (const path of [dirname(logicalProfile), logicalProfile, resolve(logicalProfile, 'hermes'), logicalHome, dirname(physicalProfile), physicalProfile, physicalHome]) {
+      const info = lstatSync(path);
+      if (!info.isDirectory() || info.isSymbolicLink()) return false;
+    }
+    const same = (left, right) => process.platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right;
+    return same(realpathSync(logicalProfile), physicalProfile) && same(realpathSync(logicalHome), physicalHome);
+  } catch { return false; }
+}
+
 export function createHermesProvider({
   launcher = discoverHermes().launcher,
   hermesHome = discoverHermes().hermesHome, hermesPython = '', hermesSource = '',
@@ -111,7 +129,7 @@ export function createHermesProvider({
   nodeExecutable = process.execPath,
 } = {}) {
   if (typeof requireChatGPT !== 'boolean' || requireChatGPT && (providerKey || typeof chatgptSession !== 'function')) throw new Error('Nemo needs its ChatGPT plan connection before chatting.');
-  if (typeof builtinMemoryHome !== 'string' || builtinMemoryHome && (!requireChatGPT || !family || localModel || providerKey || memoryEnabled || !isAbsolute(builtinMemoryHome) || /[\r\n\0]/.test(builtinMemoryHome) || resolve(builtinMemoryHome) !== resolve(dataDir, 'hermes'))) throw new Error('Native memory requires a private ChatGPT profile workspace.');
+  if (typeof builtinMemoryHome !== 'string' || builtinMemoryHome && (!requireChatGPT || !family || localModel || providerKey || memoryEnabled || !isAbsolute(builtinMemoryHome) || /[\r\n\0]/.test(builtinMemoryHome) || !privateMemoryHomeMatches(builtinMemoryHome, dataDir, profileId))) throw new Error('Native memory requires a private ChatGPT profile workspace.');
   if (localModel && (requireChatGPT || providerKey || localModel.origin !== LOCAL_OLLAMA.origin || localModel.model !== LOCAL_OLLAMA.model || localModel.context !== LOCAL_OLLAMA.context)) throw new Error('Choose the supported local Gemma assistant in Nemo setup.');
   if (providerKey && (typeof providerKey !== 'string' || providerKey.length < 16 || providerKey.length > 4096 || /[\r\n\0]/.test(providerKey))) throw new Error('The assistant account could not be unlocked. Connect it again in Nemo setup.');
   if (typeof nodeExecutable !== 'string' || !isAbsolute(nodeExecutable) || /[\r\n\0]/.test(nodeExecutable)) throw new Error('Nemo needs to repair its connected tools. Reinstall the app.');

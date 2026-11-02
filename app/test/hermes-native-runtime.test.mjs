@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, symlink, unlink } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createProfileStore } from '../lib/profile-store.mjs';
 import { createHermesProvider } from '../lib/hermes.mjs';
@@ -19,8 +19,14 @@ const response = output => new Response('data: ' + JSON.stringify({ type: 'respo
 const answer = () => response([{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'Synthetic native-memory reply.' }] }]);
 
 test('actual Hermes native memory saves, recalls privately, respects denied memory and shares the UI store', { skip: !existsSync(python), timeout: 180_000 }, async t => {
-  const root = await mkdtemp(join(tmpdir(), 'nemo-native-runtime-'));
-  t.after(() => rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
+  const physicalRoot = await mkdtemp(resolve('.work/native-memory-runtime-')), root = physicalRoot + '-configured';
+  let aliasCreated = false;
+  t.after(async () => {
+    if (aliasCreated) await unlink(root);
+    assert.equal(dirname(physicalRoot), resolve('.work')); assert.match(physicalRoot, /native-memory-runtime-/);
+    await rm(physicalRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  });
+  await symlink(physicalRoot, root, process.platform === 'win32' ? 'junction' : 'dir'); aliasCreated = true;
   const profiles = await createProfileStore({ dataDir: root });
   const owner = await profiles.owner(), other = await profiles.create('Second synthetic person');
   const shared = join(root, 'runtime-settings'); await mkdir(shared);
@@ -48,6 +54,7 @@ test('actual Hermes native memory saves, recalls privately, respects denied memo
       chatgptSession: async () => session, chatgptStatus: () => ({ connected: true, planUsageEnabled: true }), chatgptFetch: model, timeoutMs: 55_000 }) };
   }
   const { agent, home } = await agentFor(owner);
+  assert.notEqual(resolve(home), resolve(profiles.directory(owner.id), 'hermes'), 'real native turn must use the verified configured-root alias');
   const first = await agent.run({ message: 'Remember my permanent formatting preference: concise replies.', permissionRevision: '0:0:false', onActivity: value => activity.push(value) });
   assert.equal(first.toolCalls, 1);
   assert.equal(first.text, 'Synthetic native-memory reply.');

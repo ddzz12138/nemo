@@ -2,8 +2,8 @@ import { spawn as nodeSpawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as pause } from 'node:timers/promises';
-import { mkdir, readFile, realpath } from 'node:fs/promises';
-import { isAbsolute, join, resolve, toNamespacedPath } from 'node:path';
+import { lstat, mkdir, mkdtemp, readFile, realpath, rmdir, unlink, writeFile } from 'node:fs/promises';
+import { basename, dirname, isAbsolute, join, resolve, toNamespacedPath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { prepareHermesWorkspace } from './hermes-memory.mjs';
 import { verifyNativeRuntime } from './native-compatibility.mjs';
@@ -138,16 +138,34 @@ export async function startHermesWorkspaceWorker({ profile, dataDir, pythonPath,
   if (compatibility?.supported !== true) throw new Error('This Hermes runtime needs compatibility review.');
   const workspace = join(home, 'workspace'), temporary = join(home, 'scratch');
   await mkdir(workspace, { recursive: true }); await mkdir(temporary, { recursive: true });
+  // Use Hermes's supported managed-scope overlay, never rewrite the owner's
+  // config or monkey-patch its resume handler. A forced process stop must also
+  // restore history without automatically resubmitting an uncertain action.
+  if (signal?.aborted) throw new Error('Hermes workspace startup was cancelled.');
+  const policy = await mkdtemp(join(temporary, 'nemo-workspace-policy-'));
+  const clearPolicy = async () => {
+    if (dirname(policy) !== temporary || !basename(policy).startsWith('nemo-workspace-policy-')) throw unavailable();
+    const info = await lstat(policy).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+    if (!info) return;
+    if (!info.isDirectory() || info.isSymbolicLink()) throw unavailable();
+    await unlink(join(policy, 'config.yaml')).catch(error => { if (error.code !== 'ENOENT') throw error; });
+    await rmdir(policy); // Remove only our known file and empty directory; never recurse.
+  };
+  try { await writeFile(join(policy, 'config.yaml'), 'desktop:\n  auto_continue:\n    enabled: false\n', { flag: 'wx', mode: 0o600 }); }
+  catch (error) { await clearPolicy(); throw error; }
   const env = {};
   for (const [key, value] of Object.entries(environment)) if (['PATH', 'PATHEXT', 'SYSTEMROOT', 'WINDIR', 'SYSTEMDRIVE', 'COMSPEC', 'LANG', 'LC_ALL'].includes(key.toUpperCase())) env[key] = value;
   const privateHome = toNamespacedPath(home), privateTemporary = toNamespacedPath(temporary);
   Object.assign(env, { HOME: privateHome, USERPROFILE: privateHome, APPDATA: join(privateHome, 'appdata'), LOCALAPPDATA: join(privateHome, 'localappdata'), XDG_CACHE_HOME: join(privateHome, 'cache'), HERMES_HOME: privateHome, TMP: privateTemporary, TEMP: privateTemporary, TMPDIR: privateTemporary, NEMO_WORKSPACE_PROFILE: profile.id, NEMO_WORKSPACE_ROOT: toNamespacedPath(root),
     HERMES_MODEL: model, HERMES_INFERENCE_MODEL: model, HERMES_INFERENCE_PROVIDER: 'custom', HERMES_TUI_PROVIDER: 'custom', CUSTOM_BASE_URL: brokerUrl, OPENAI_BASE_URL: brokerUrl, OPENAI_API_KEY: brokerGrant,
+    HERMES_MANAGED_DIR: toNamespacedPath(policy),
     PYTHONDONTWRITEBYTECODE: '1', PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8', NO_COLOR: '1', NO_PROXY: '127.0.0.1' });
   const helper = fileURLToPath(new URL('./hermes_workspace_worker.py', import.meta.url));
   const bootstrap = `import sys, runpy; sys.path.insert(0, ${JSON.stringify(sourceRoot)}); import hermes_bootstrap; runpy.run_path(${JSON.stringify(helper)}, run_name='__main__')`;
-  if (signal?.aborted) throw new Error('Hermes workspace startup was cancelled.');
-  const child = spawn(pythonPath, ['-I', '-B', '-c', bootstrap], { cwd: workspace, env, shell: false, windowsHide: true, detached: process.platform !== 'win32', stdio: ['pipe', 'pipe', 'pipe'] });
+  if (signal?.aborted) { await clearPolicy(); throw new Error('Hermes workspace startup was cancelled.'); }
+  let child;
+  try { child = spawn(pythonPath, ['-I', '-B', '-c', bootstrap], { cwd: workspace, env, shell: false, windowsHide: true, detached: process.platform !== 'win32', stdio: ['pipe', 'pipe', 'pipe'] }); }
+  catch { await clearPolicy(); throw unavailable(); }
   const stopped = new Promise(resolveStopped => child.once('close', resolveStopped));
   const client = new HermesWorkspaceClient({ input: child.stdin, output: child.stdout });
   let closing = false, closeOperation = null;
@@ -187,6 +205,7 @@ export async function startHermesWorkspaceWorker({ profile, dataDir, pythonPath,
           confirmed = await Promise.race([stopped.then(() => true), pause(1000).then(() => false)]);
         }
         if (!confirmed) throw Object.assign(new Error('Hermes could not confirm that its workspace stopped. Check this computer before continuing.'), { stopUnconfirmed: true });
+        await clearPolicy();
       })();
       try { await closeOperation; }
       catch (error) { closeOperation = null; throw error; }
@@ -199,6 +218,7 @@ export async function startHermesWorkspaceWorker({ profile, dataDir, pythonPath,
       if (!await Promise.race([stopped.then(() => true), pause(1000).then(() => false)])) {
         throw Object.assign(new Error('Hermes could not confirm that its workspace stopped. Check this computer before continuing.'), { stopUnconfirmed: true, close: cleanup });
       }
+      await clearPolicy();
     };
     await cleanup();
     throw error;

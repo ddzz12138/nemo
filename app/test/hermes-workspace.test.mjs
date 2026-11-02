@@ -83,6 +83,20 @@ test('stop cancels the process without retry and opening restores the upstream c
   assert.deepEqual(restored.messages.map(row=>row.content),['Earlier request','Earlier answer']);assert.equal(JSON.stringify(restored).includes('HIDDEN_TOOL_OUTPUT'),false);
 });
 
+test('Stop lets the native worker interrupt before aborting its transport or closing the broker',async t=>{
+  const f=await fixture(t),order=[];
+  const service=await f.create({
+    createBroker:async()=>({baseUrl:'http://127.0.0.1:12345/v1',capability:'SYNTHETIC_LOOPBACK_CAPABILITY',model:'synthetic-model',async close(){order.push('broker-close');}}),
+    startWorker:async({signal})=>{
+      const client=new EventEmitter();client.request=async()=>({session_id:'workspace-live',info:{tools:{terminal:['terminal']}}});
+      signal.addEventListener('abort',()=>order.push('transport-abort'),{once:true});
+      return {client,async close(){order.push('native-interrupt');await tick();order.push('native-closed');}};
+    },
+  });
+  t.after(()=>service.close());await service.start();await service.stop();
+  assert.deepEqual(order,['native-interrupt','native-closed','transport-abort','broker-close']);
+});
+
 test('uncertain process shutdown remains busy and can be retried without starting another agent',async t=>{
   const f=await fixture(t);await f.service.start();f.failClose(true);const stopped=await f.service.stop();assert.equal(stopped.phase,'error');assert.equal(stopped.busy,true);assert.equal(f.service.isBusy(),true);
   await assert.rejects(f.service.start(),error=>error.code==='HERMES_WORKSPACE_BUSY');assert.equal(f.unlocks,1);

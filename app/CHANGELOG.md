@@ -6,6 +6,8 @@
 - Add Hermes workspace for the owner on the home PC, with native skills, tools, approval choices, browser/computer dependency preparation and delegation. Regular family chat retains its scoped permissions.
 - Keep replies, memory decisions and workspace inference on the connected ChatGPT subscription, without local models, API-key setup or another-provider fallback. Relevant saved notes and tool context may be sent to ChatGPT.
 - Preserve saved chats, protected accounts and source-cleanup checks. Stop owner work on logout or device revocation, and require confirmed native shutdown before quitting.
+- Interrupt workspace sessions before closing their transport, and prevent stopped or interrupted work from automatically running again on reopen.
+- Keep private memory usable when Windows exposes the configured home through a verified path alias, while rejecting foreign or redirected profile paths.
 - Include the pinned package-manager runtime and mandatory native integration checks in the public Windows build recipe. This source preview does not publish a signed installer or establish real-account, clean-PC or physical-device acceptance.
 
 ## 0.3.0-alpha.18 — 2026-10-31

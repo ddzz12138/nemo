@@ -93,12 +93,20 @@ export async function createHermesWorkspace({dataDir,profileId,getProfile,python
   async function dispose(nextPhase='stopped',{waitForStart=true}={}) {
     if(stopping)return stopping;
     const cleanup=(async()=>{
-    generation++;cancellation++; const oldWorker=worker||lingeringWorker,oldBroker=broker,oldPreparation=preparing||lingeringPreparation,oldStart=waitForStart?starting:null;worker=null;lingeringWorker=null;broker=null;currentSession=null;
-    controller?.abort();controller=null;clearInterval(guardTimer);guardTimer=null;requests.clear();phase=nextPhase;update();
+    generation++;cancellation++; const oldWorker=worker||lingeringWorker,oldBroker=broker,oldPreparation=preparing||lingeringPreparation,oldStart=waitForStart?starting:null,oldController=controller;worker=null;lingeringWorker=null;broker=null;currentSession=null;
+    controller=null;clearInterval(guardTimer);guardTimer=null;requests.clear();phase=nextPhase;update();
+    // An established gateway must receive session.interrupt while its RPC
+    // transport is still alive. Aborting first looks like a process crash and
+    // can leave a durable turn marker that upstream resumes automatically.
+    // Pending startup/package preparation still needs prompt cancellation.
+    const graceful=!!oldWorker&&!oldStart&&!oldPreparation;
+    if(!graceful)oldController?.abort();
+    const workerClose=Promise.resolve().then(()=>oldWorker?.close());
+    if(graceful){await workerClose.catch(()=>{});oldController?.abort();}
     // A native process may still be starting when Stop arrives. Its factory
     // must settle and confirm cleanup before Stop can report its final state.
     // Startup's own failure cleanup skips this wait to avoid awaiting itself.
-    const results=await Promise.allSettled([Promise.resolve().then(()=>oldWorker?.close()),Promise.resolve().then(()=>oldBroker?.close()),oldPreparation,oldStart]);
+    const results=await Promise.allSettled([workerClose,Promise.resolve().then(()=>oldBroker?.close()),oldPreparation,oldStart]);
     if(results[0].status==='rejected'){lingeringWorker=oldWorker;phase='error';problem='Some running Hermes work could not be confirmed stopped. Try Stop Hermes again before continuing.';update();}
     if(results[2].status==='rejected'){lingeringPreparation=oldPreparation;phase='error';problem='The tool setup could not be confirmed stopped. Quit Nemo before continuing.';update();}
     else if(oldPreparation&&preparation?.phase==='preparing'){preparation={phase:'cancelled',progress:null,tools:null};update();}

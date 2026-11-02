@@ -41,6 +41,7 @@ const mandatory=[
   'compiled desktop Memory exposes native Forget/Clear without Off or local-engine setup',
   'actual unchanged Hermes gateway exposes native skills and tools in the owner memory workspace',
   'actual unchanged Hermes executes skills, terminal and a subagent through the ChatGPT broker',
+  'actual Hermes Stop and forced exit reopen saved conversations without replaying interrupted turns',
   'actual packaged PM routes stock CLI through separate pinned dependencies with isolated imports',
   'full Hermes is local-owner only, rejects arbitrary controls, blocks concurrent normal chat and stops at logout',
   'compiled Hermes workspace shows actual readiness, native approval choices and private masked request controls',
