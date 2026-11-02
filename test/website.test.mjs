@@ -87,7 +87,7 @@ test('the complete accessible hero is delivered in HTML, before enhancement', ()
   assert.ok(!/<(?:input|textarea|button|form)\b/.test(figure), 'phone controls stay inert');
   assert.ok(!/hero-controls|id="(?:finish|replay)"|aria-live/.test(home), 'decorative looping needs no manual controls or repeated live announcements');
   assert.ok(home.includes('<span class="sr-only">For everyone</span>'));
-  assert.ok(home.includes('Illustrative sequence. Gmail is optional; automatic Memory is deferred from v1.'));
+  assert.ok(home.includes('Illustrative sequence. Gmail is optional; saved notes can inform ChatGPT replies.'));
 });
 
 test('the approved setup sequence and all four disclosure answers are preserved', () => {
@@ -98,7 +98,7 @@ test('the approved setup sequence and all four disclosure answers are preserved'
     'Use an eligible ChatGPT subscription. No API key or local model to set up.',
     'Chat on your computer. Return to your saved history.',
     'The first version uses Windows and an eligible ChatGPT subscription. Local AI models are not included. Your plan’s usage limits and credit settings apply. Public distribution still needs release verification.',
-    'Calendar and Gmail are optional connections. Automatic Memory and local AI models are deferred from v1.',
+    'Calendar and Gmail are optional connections. Hermes memory works automatically; saved notes stay on your PC and relevant notes go to ChatGPT. Local AI models remain deferred.',
     'Once the hosted connection is configured and verified, Nemo can issue a personal invitation. Phone access needs the home computer awake and online.',
     'Your chats and personal data are hosted on your computer. The connected AI provider receives the conversation context and permitted tool results needed to answer.',
   ]) assert.ok(text(how).includes(sentence), sentence);
@@ -123,8 +123,8 @@ test('About retains the fair Hermes comparison, five rows and native FAQs', () =
   for (const phrase of [
     'Hermes on its own', 'Hermes through Nemo', 'The same agent, with a family experience around it.',
     'Hermes has its own interfaces and memory.', 'Nous Research',
-    'Nemo does not yet bring every Hermes tool into the family app.',
-    'The first version requires a ChatGPT subscription. Calendar and Gmail are optional; automatic Memory and local AI models are deferred.',
+    'Family chat keeps its scoped tools. The local owner’s workspace uses Hermes’s own tools and approvals.',
+    'The source preview requires a ChatGPT subscription and includes automatic Hermes memory plus a local-owner workspace. Calendar and Gmail are optional; local AI models and School notice remain deferred.',
   ]) assert.ok(text(about).includes(phrase), phrase);
 });
 

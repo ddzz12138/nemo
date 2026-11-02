@@ -2,6 +2,14 @@
 
 These entries track the public website. An installable Nemo app has not been released.
 
+## [0.0.7.1] - 2026-11-02
+
+### Changed
+
+- Explain automatic Hermes memory in the ChatGPT-only source preview, including local notes, relevant context sent to ChatGPT and view/forget/clear controls.
+- Describe the full Hermes workspace for the owner directly on the home PC, with native tools and approvals and the owner’s operating-system access.
+- Keep the public-download, phone, local-model and other deferred-feature limits clear.
+
 ## [0.0.7.0] - 2026-11-01
 
 ### Changed
