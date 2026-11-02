@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rm, symlink, unlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join, resolve, dirname } from 'node:path';
+import { join, resolve, dirname, basename } from 'node:path';
 import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
 import { createProfileStore } from '../lib/profile-store.mjs';
 import { createHermesProvider } from '../lib/hermes.mjs';
 import { prepareHermesWorkspace, createHermesMemory } from '../lib/hermes-memory.mjs';
@@ -18,15 +19,27 @@ const session = { provider: 'chatgpt', accessToken: 'synthetic-native-memory-sub
 const response = output => new Response('data: ' + JSON.stringify({ type: 'response.completed', response: { id: 'resp_native_memory', status: 'completed', output, usage: {} } }) + '\n\n', { headers: { 'content-type': 'text/event-stream' } });
 const answer = () => response([{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'Synthetic native-memory reply.' }] }]);
 
-test('actual Hermes native memory saves, recalls privately, respects denied memory and shares the UI store', { skip: !existsSync(python), timeout: 180_000 }, async t => {
-  const physicalRoot = await mkdtemp(resolve('.work/native-memory-runtime-')), root = physicalRoot + '-configured';
-  let aliasCreated = false;
+async function nativeTemporaryRoot(t, prefix) {
+  const allocated = await mkdtemp(join(tmpdir(), prefix)), parent = await realpath(tmpdir());
   t.after(async () => {
-    if (aliasCreated) await unlink(root);
-    assert.equal(dirname(physicalRoot), resolve('.work')); assert.match(physicalRoot, /native-memory-runtime-/);
-    await rm(physicalRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    const actual = await realpath(allocated);
+    const comparable = value => process.platform === 'win32' ? value.toLowerCase() : value;
+    assert.equal(comparable(dirname(actual)), comparable(parent)); assert.ok(basename(allocated).startsWith(prefix));
+    await rm(allocated, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
-  await symlink(physicalRoot, root, process.platform === 'win32' ? 'junction' : 'dir'); aliasCreated = true;
+  if (process.platform !== 'win32') return allocated;
+  const code = "import ctypes,sys; f=ctypes.windll.kernel32.GetShortPathNameW; f.argtypes=[ctypes.c_wchar_p,ctypes.c_wchar_p,ctypes.c_uint]; f.restype=ctypes.c_uint; n=f(sys.argv[1],None,0); b=ctypes.create_unicode_buffer(n); r=f(sys.argv[1],b,n); assert r, ctypes.WinError(); print(b.value)";
+  const probe = spawnSync(python, ['-I', '-B', '-c', code, allocated], { encoding: 'utf8', timeout: 5000, windowsHide: true });
+  assert.equal(probe.status, 0, probe.stderr || probe.error?.message);
+  const root = probe.stdout.trim(); assert.ok(root);
+  t.diagnostic(resolve(root) !== resolve(await realpath(root))
+    ? 'Actual native execution uses Windows TEMP through its GetShortPathNameW alias.'
+    : 'No distinct 8.3 spelling on this volume; actual native execution still uses Windows TEMP.');
+  return root;
+}
+
+test('actual Hermes native memory saves, recalls privately, respects denied memory and shares the UI store', { skip: !existsSync(python), timeout: 180_000 }, async t => {
+  const root = await nativeTemporaryRoot(t, 'nemo-native-runtime-');
   const profiles = await createProfileStore({ dataDir: root });
   const owner = await profiles.owner(), other = await profiles.create('Second synthetic person');
   const shared = join(root, 'runtime-settings'); await mkdir(shared);
@@ -54,7 +67,7 @@ test('actual Hermes native memory saves, recalls privately, respects denied memo
       chatgptSession: async () => session, chatgptStatus: () => ({ connected: true, planUsageEnabled: true }), chatgptFetch: model, timeoutMs: 55_000 }) };
   }
   const { agent, home } = await agentFor(owner);
-  assert.notEqual(resolve(home), resolve(profiles.directory(owner.id), 'hermes'), 'real native turn must use the verified configured-root alias');
+  if (resolve(root) !== resolve(await realpath(root))) assert.notEqual(resolve(home), resolve(profiles.directory(owner.id), 'hermes'), 'real native turn must prove its Windows configured-root alias');
   const first = await agent.run({ message: 'Remember my permanent formatting preference: concise replies.', permissionRevision: '0:0:false', onActivity: value => activity.push(value) });
   assert.equal(first.toolCalls, 1);
   assert.equal(first.text, 'Synthetic native-memory reply.');
@@ -87,8 +100,7 @@ test('actual Hermes native memory saves, recalls privately, respects denied memo
 });
 
 test('actual Hermes combines its native memory tool with an explicitly permitted calendar read', { skip: !existsSync(python), timeout: 80_000 }, async t => {
-  const root = await mkdtemp(join(tmpdir(), 'nemo-native-mcp-'));
-  t.after(() => rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
+  const root = await nativeTemporaryRoot(t, 'nemo-native-mcp-');
   const profiles = await createProfileStore({ dataDir: root }); const owner = await profiles.owner();
   const dataDir = profiles.directory(owner.id), home = await prepareHermesWorkspace({ profileId: owner.id, profileDataDir: dataDir });
   const calendar = await createCalendarStore({ dataDir }); const token = await calendar.issueToken();

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, rm, symlink, unlink } from 'node:fs/promises';
 import { existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve, join, dirname } from 'node:path';
+import { resolve, join, dirname, toNamespacedPath } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createProfileStore } from '../lib/profile-store.mjs';
@@ -67,6 +67,30 @@ test('native provider accepts the trusted root alias only when it resolves to th
   await symlink(profiles.directory(owner.id), redirected, process.platform === 'win32' ? 'junction' : 'dir'); redirectedCreated = true;
   assert.throws(() => createHermesProvider({ ...options, dataDir: join(alias, 'profiles', '00000000-0000-0000-0000-000000000000'), profileId: '00000000-0000-0000-0000-000000000000' }), /private ChatGPT profile/);
   assert.throws(() => createHermesProvider({ ...options, dataDir: redirected, builtinMemoryHome: join(redirected, 'hermes'), profileId: '00000000-0000-0000-0000-000000000000' }), /private ChatGPT profile/);
+});
+
+test('native provider binds an actual Windows short-name root to its canonical private memory', { skip: process.platform !== 'win32' || !pythonPath() }, async t => {
+  const root = await mkdtemp(resolve('.work/native-provider-short-'));
+  t.after(async () => {
+    assert.equal(dirname(root), resolve('.work')); assert.match(root, /native-provider-short-/);
+    await rm(root, { recursive: true, force: true, maxRetries: 6, retryDelay: 100 });
+  });
+  const profiles = await createProfileStore({ dataDir: root }), owner = await profiles.owner();
+  const home = await prepareHermesWorkspace({ profileId: owner.id, profileDataDir: profiles.directory(owner.id) });
+  const code = "import ctypes,sys; f=ctypes.windll.kernel32.GetShortPathNameW; f.argtypes=[ctypes.c_wchar_p,ctypes.c_wchar_p,ctypes.c_uint]; f.restype=ctypes.c_uint; n=f(sys.argv[1],None,0); b=ctypes.create_unicode_buffer(n); r=f(sys.argv[1],b,n); assert r, ctypes.WinError(); print(b.value)";
+  const probe = spawnSync(pythonPath(), ['-I', '-B', '-c', code, root], { encoding: 'utf8', timeout: 5000, windowsHide: true });
+  assert.equal(probe.status, 0, probe.stderr || probe.error?.message);
+  const shortRoot = probe.stdout.trim(); assert.ok(shortRoot);
+  if (resolve(shortRoot) === resolve(root)) t.diagnostic('This volume did not expose a distinct 8.3 spelling; normal native profile proof still runs.');
+  else t.diagnostic('Exercised GetShortPathNameW filesystem alias with the canonical private home.');
+  let credentials = 0;
+  for (const configuredRoot of [shortRoot, toNamespacedPath(shortRoot)]) {
+    const agent = createHermesProvider({ hermesPython: process.execPath, hermesSource: resolve('vendor/hermes-source'),
+      family: true, requireChatGPT: true, profileId: owner.id, dataDir: join(configuredRoot, 'profiles', owner.id), builtinMemoryHome: home,
+      chatgptSession: async () => { credentials++; throw new Error('No account access for path proof'); } });
+    assert.match((await agent.memoryCommand())[4], /hermes_memory\.py/);
+  }
+  assert.equal(credentials, 0);
 });
 
 test('ChatGPT broker admits native memory only when permitted and preserves bounded native batches', () => {

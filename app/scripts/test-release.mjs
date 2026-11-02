@@ -18,11 +18,21 @@ await verifyHermesBundle({root:runtime,manifest:runtimeManifest.hermes});
 Object.assign(process.env,{NEMO_TEST_PYTHON:python,NEMO_TEST_HERMES_ROOT:source,NEMO_TEST_NATIVE_PYTHON:python,NEMO_TEST_NATIVE_SOURCE:source});
 const files=(await readdir(join(APP_ROOT,'test'))).filter(x=>x.endsWith('.test.mjs')).map(x=>join(APP_ROOT,'test',x));
 const passed=new Set(),skipped=[],failed=[];
+// Nested hook/OS failures need classification without printing provider data,
+// command arguments, filesystem paths or credential-bearing error messages.
+function failureCodes(error,depth=0){
+  if(!error||typeof error!=='object'||depth>3)return undefined;
+  const value={};
+  for(const key of ['name','code','failureType','syscall'])if(typeof error[key]==='string'&&/^[A-Za-z0-9_-]{1,80}$/.test(error[key]))value[key]=error[key];
+  if(error.cause)value.cause=failureCodes(error.cause,depth+1);
+  if(Array.isArray(error.errors))value.errors=error.errors.slice(0,3).map(item=>failureCodes(item,depth+1));
+  return value;
+}
 for await(const event of run({files,concurrency:2})) {
   if(event.type==='test:pass') {
     if(event.data.skip)skipped.push(event.data.name);else passed.add(event.data.name);
   }
-  if(event.type==='test:fail'){failed.push(event.data.name);console.error(event.data.name+': '+String(event.data.details?.error?.message||'failed').slice(0,1500));}
+  if(event.type==='test:fail'){failed.push(event.data.name);console.error(event.data.name+': '+String(event.data.details?.error?.message||'failed').slice(0,1500)+' '+JSON.stringify(failureCodes(event.data.details?.error)));}
 }
 try { await verifyHermesBundle({root:runtime,manifest:runtimeManifest.hermes}); }
 catch(error) { failed.push('sealed runtime remains unchanged after the complete suite'); console.error(error.message); }
@@ -36,6 +46,7 @@ const mandatory=[
   'actual bundled Hermes executes its exact calendar read through namespaced plan tools and MCP',
   'actual Hermes native memory saves, recalls privately, respects denied memory and shares the UI store',
   'actual Hermes combines its native memory tool with an explicitly permitted calendar read',
+  'native provider binds an actual Windows short-name root to its canonical private memory',
   'native Memory HTTP uses the same Hermes files and pins every operation to its signed-in profile',
   'partial native clear reports incomplete and leaves exposed-source cleanup blocked until verified retry',
   'compiled desktop Memory exposes native Forget/Clear without Off or local-engine setup',

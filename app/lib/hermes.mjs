@@ -109,13 +109,16 @@ function privateMemoryHomeMatches(home, dataDir, profileId) {
   if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(profileId || '')
       || basename(logicalProfile) !== profileId || basename(dirname(logicalProfile)) !== 'profiles') return false;
   try {
-    const root = realpathSync(dirname(dirname(logicalProfile))), physicalProfile = join(root, 'profiles', profileId), physicalHome = join(physicalProfile, 'hermes');
+    // The JS realpath implementation can retain Windows 8.3 spellings. Use
+    // the same native canonicalization as fs.promises.realpath in provisioning.
+    const canonical = process.platform === 'win32' ? realpathSync.native : realpathSync;
+    const root = canonical(dirname(dirname(logicalProfile))), physicalProfile = join(root, 'profiles', profileId), physicalHome = join(physicalProfile, 'hermes');
     for (const path of [dirname(logicalProfile), logicalProfile, resolve(logicalProfile, 'hermes'), logicalHome, dirname(physicalProfile), physicalProfile, physicalHome]) {
       const info = lstatSync(path);
       if (!info.isDirectory() || info.isSymbolicLink()) return false;
     }
     const same = (left, right) => process.platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right;
-    return same(realpathSync(logicalProfile), physicalProfile) && same(realpathSync(logicalHome), physicalHome);
+    return same(canonical(logicalProfile), physicalProfile) && same(canonical(logicalHome), physicalHome);
   } catch { return false; }
 }
 
