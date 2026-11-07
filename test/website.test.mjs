@@ -226,8 +226,10 @@ test('failed or invalid downloads never leave a publishable font or temporary fi
 });
 
 test('public executable assets have no real tool, model, private-server or telemetry calls', async () => {
-  const script = await load(join(docs, 'app.js'));
-  assert.ok(!/\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon)\s*\(/.test(script));
+  for (const file of ['app.js', 'scroll-story.js']) {
+    const script = await load(join(docs, file));
+    assert.ok(!/\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon)\s*\(/.test(script), file);
+  }
   for (const html of htmls.values()) assert.ok(!/https?:\/\/(?:localhost|127\.0\.0\.1)|\.nemo\//.test(html));
 });
 
