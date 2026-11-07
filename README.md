@@ -14,6 +14,8 @@ The website contains fictional product examples and has no connection to a famil
 
 Home shows the vision; **How it works** shows the guided desktop setup; **About Nemo** explains Hermes and Nemo's family features. Shared family-calendar planning is labelled as a future feature. Optional accounts need their own setup. The source preview includes automatic Hermes memory and a full Hermes workspace for the owner on the home PC. Local AI models, GBrain extraction/embeddings and School notice remain deferred.
 
+How it works uses one continuous numbered walkthrough with unboxed product illustrations and a prominent Nemo wordmark. Home retains the approved phone hero; its personal examples use typography and separators, and its abstract hardware teaser spans the page. Shared colour, type and spacing connect these sections without decorative card grids.
+
 Dedicated home hardware is a future direction, still in development. The website uses an abstract illustration, not a product rendering; it does not publish hardware specifications or a final design, price or release date.
 
 The footer links to **Privacy**, **Terms & safety**, **Licences & credits**, and the public contact address. These explain the website and self-hosted app separately, connected-provider data handling and the current invited-adult preview. They do not claim Google verification or approval for children to use a particular AI account. Public child access remains pending provider and safety review.

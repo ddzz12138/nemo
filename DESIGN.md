@@ -2,7 +2,7 @@
 
 ## Direction
 
-Six pages share one warm Ranade visual language. Home, How it works and About Nemo separate vision, setup and foundations; Privacy, Terms & safety and Licences & credits provide the supporting disclosures. Home retains the owner-approved product split: a large upright phone on the left, a clear family-AI promise on the right, and a centred capsule navigation. Below, three scroll chapters show remembered preferences, future shared family planning and guided learning. Personal examples, an abstract hardware teaser and the broader Nemo vision complete the page. How it works preserves the approved setup sequence. About explains the vision and the same Hermes engine inside and outside Nemo's family experience.
+Six pages share one warm Ranade visual language. Home, How it works and About Nemo separate vision, setup and foundations; Privacy, Terms & safety and Licences & credits provide the supporting disclosures. Home retains the owner-approved product split: a large upright phone on the left, a clear family-AI promise on the right, and a centred capsule navigation. Below, three scroll chapters show remembered preferences, future shared family planning and guided learning. Personal examples, an abstract hardware teaser and the broader Nemo vision complete the page. How it works presents the approved setup sequence as one continuous numbered walkthrough. About explains the vision and the same Hermes engine inside and outside Nemo's family experience.
 
 The memory example follows school emails: “Only actions. Deadlines first. Remember that.” → a remembered preference → a later deadline-first checklist. This is an on-demand illustration with separately configured Gmail and automatic Hermes notes. It does not imply background email monitoring or scheduled work.
 
@@ -10,11 +10,21 @@ The memory example follows school emails: “Only actions. Deadlines first. Reme
 
 Ranade regular/medium for website copy and headings, with platform typography inside the illustrative phone. Orange #F88009 outgoing messages, dark orange #BD4D20 emphasis, charcoal #20242A and warm cream. The static panel's peach/orange lighting, pale edge and diffuse shadow give the background a lifted appearance. The phone stays upright and stationary; no perspective, bobbing or floating control.
 
-The hero's raised background panel keeps an intentional phone crop and an external caption, with responsive stage dimensions. At the 960px stacking breakpoint, copy comes first. Body and screen proportions, Dan's label, message bubbles, status bar and separate +/input pill follow the approved preview. Original inline SVG diagrams remain; no family photography is loaded. Warm panels, quiet borders, pale edges and diffuse shadows carry the same visual language through every page.
+The hero's raised background panel keeps an intentional phone crop and an external caption, with responsive stage dimensions. At the 960px stacking breakpoint, copy comes first. Body and screen proportions, Dan's label, message bubbles, status bar and separate +/input pill follow the approved preview. Original inline SVG diagrams remain; no family photography is loaded. Colour, type and spacing carry the brand across the other pages without requiring repeated containers.
+
+Default to a shared composition and give each section one clear job. Avoid decorative cards, nested rounded panels, repeated window chrome and ornamental icons. Use a container when it explains a real control, an interaction or the product itself. The explicitly approved Home hero remains an exception with its raised phone stage. Personal-response examples use plain typography and separators; the hardware teaser spans the page without a rounded outer frame. Motion should explain the sequence or preserve orientation.
+
+How it works and About Nemo share a brand-first introduction: a prominent Nemo wordmark beside the page's existing promise, stacked on narrow screens. About's Hermes comparison is one unframed composition with horizontal rules, no outer rounded card or shadow, and plain capability labels instead of decorative pills. Keep the underlying diagram, comparison rows and factual explanations intact.
 
 The hero begins with Going open source in the existing uppercase eyebrow style. Follow on GitHub sits beside Explore Nemo, with the charcoal repository icon and orange hover/focus underline. The action row wraps on narrow screens. The preview line states that a ChatGPT subscription is required and local models are not included in v1. Application source is public; a public installer is still being prepared. The navigation retains About Nemo and How it works, and the footer retains its repository link.
 
 Main narrative copy is at least 16px and critical preview, future-feature and consent labels at least 14px. Text inside inert product illustrations may scale with the artwork; the phone has a full accessible transcript. Functional controls have 44px minimum targets and visible focus. Lower-page content is at most 1280px wide with narrow-screen gutters. The desktop scroll story is an optional presentation of complete HTML content, with a fully readable static fallback.
+
+## Setup walkthrough
+
+How it works leads with a prominent Nemo wordmark and the existing guided-setup promise. One continuous warm surface contains three ordered, unboxed rows: Open Nemo, Connect your AI, and Start a conversation. A number gutter, action heading and short explanation sit beside the relevant product illustration. Thin horizontal rules and whitespace establish the sequence. The name field, sign-in action and chat bubbles retain their recognisable UI shapes; there are no surrounding cards or repeated fake application windows.
+
+On narrow screens, each row reads number, heading, explanation, illustration. The real step headings use `h2`; illustrative screen titles are styled paragraphs. All depicted controls remain inert and the fictional-data caption stays visible. Availability is a plain text strip followed by the four native FAQ disclosures. This walkthrough uses ordinary document flow and needs no added animation or JavaScript.
 
 ## Interaction and access
 
