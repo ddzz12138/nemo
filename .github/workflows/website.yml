@@ -35,7 +35,9 @@ jobs:
       - name: Verify release contracts
         run: node --test test/website.test.mjs
       - name: Check JavaScript syntax
-        run: node --check docs/app.js
+        run: |
+          node --check docs/app.js
+          node --check docs/scroll-story.js
       - name: Configure Pages
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/configure-pages@v5

@@ -14,22 +14,29 @@ The website contains fictional product examples and has no connection to a famil
 
 Home shows the vision; **How it works** shows the guided desktop setup; **About Nemo** explains Hermes and Nemo's family features. Shared family-calendar planning is labelled as a future feature. Optional accounts need their own setup. The source preview includes automatic Hermes memory and a full Hermes workspace for the owner on the home PC. Local AI models, GBrain extraction/embeddings and School notice remain deferred.
 
+How it works uses one continuous numbered walkthrough with unboxed product illustrations and a prominent Nemo wordmark. Home retains the approved phone hero; its personal examples use typography and separators, and its abstract hardware teaser spans the page. Shared colour, type and spacing connect these sections without decorative card grids.
+
+Dedicated home hardware is a future direction, still in development. The website uses an abstract illustration, not a product rendering; it does not publish hardware specifications or a final design, price or release date.
+
 The footer links to **Privacy**, **Terms & safety**, **Licences & credits**, and the public contact address. These explain the website and self-hosted app separately, connected-provider data handling and the current invited-adult preview. They do not claim Google verification or approval for children to use a particular AI account. Public child access remains pending provider and safety review.
 
 ## Preview and verification
 
-Use Node.js 24 or later; there are no npm dependencies.
+Use Node.js 24 or later; no npm installation or build step is required. The browser loads the checked-in GSAP and ScrollTrigger distributions from `docs/assets/vendor/`, with their original licence notices. See [animation dependency provenance](docs/assets/vendor/README.md).
 
 ```sh
 node scripts/prepare-fonts.mjs
 node --test test/website.test.mjs
 node --check docs/app.js
+node --check docs/scroll-story.js
 node preview-pages.mjs
 ```
 
 Open [the local preview](http://127.0.0.1:8794/nemo/). The font command downloads and verifies the two official Ranade weights for this website's use. Its binaries stay out of Git; see [font licensing and provenance](docs/assets/fonts/README.md). Visitors load fonts from Nemo, without requests to Fontshare.
 
 Browser verification also covers mobile layouts, native disclosures, keyboard focus, the coordinated conversation/headline loop, visibility pauses, scroll navigation, reduced motion and failure recovery. The automated checks protect release contracts and font integrity; they do not replace visual/browser checks.
+
+Home's scroll chapters pin only on sufficiently wide, tall screens with reduced motion disabled. Check forward and reverse scrolling, pin release, `#memory` and `#hardware` links, resizing between desktop and mobile, and changing the reduced-motion preference while the page is open. With JavaScript disabled, an unavailable animation library, missing CSS, a small viewport or reduced motion enabled, all three chapters must remain readable in ordinary document order. GSAP is served locally; these animations make no requests to a library CDN or private Nemo server.
 
 ## Publishing
 

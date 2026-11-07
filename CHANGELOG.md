@@ -2,6 +2,16 @@
 
 These entries track the public website. An installable Nemo app has not been released.
 
+## [0.0.8.0] - 2026-11-07
+
+### Changed
+
+- Carry Nemo’s warm peach palette and Ranade typography throughout the website, preserving the original hero and product illustrations.
+- Replace decorative setup cards with one continuous numbered walkthrough, and present the family examples as open typography with simple dividers.
+- Explore remembered preferences, shared family plans and guided learning through a scroll-driven chapter sequence, with a complete static layout on smaller screens and for reduced motion.
+- Introduce the vision for dedicated home hardware through an abstract teaser, without revealing product design or technical details.
+- Keep present-day preview limits and future features clear, and make the supporting pages feel like part of the same experience.
+
 ## [0.0.7.1] - 2026-11-02
 
 ### Changed
