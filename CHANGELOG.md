@@ -2,6 +2,15 @@
 
 These entries track the public website. An installable Nemo app has not been released.
 
+## [0.0.9.0] - 2026-11-09
+
+### Changed
+
+- Present Nemo with a clear, fixed everyday-life message and a complete phone illustration on a continuous cream background.
+- Add original home and picnic imagery, forest-green story sections and consistent typography across the supporting pages.
+- Make Windows preview eligibility, public-download availability and future family features easier to distinguish.
+- Keep keyboard navigation visible above the full-width header.
+
 ## [0.0.8.0] - 2026-11-07
 
 ### Changed

@@ -1,7 +1,7 @@
 @charset "UTF-8";
 /* Nemo shared styles: approved product language and scroll chapters. */
-@font-face{font-family:Ranade;font-style:normal;font-weight:400;font-display:swap;src:url('assets/fonts/ranade-regular.woff2?v=0.0.8.0') format('woff2')}
-@font-face{font-family:Ranade;font-style:normal;font-weight:500;font-display:swap;src:url('assets/fonts/ranade-medium.woff2?v=0.0.8.0') format('woff2')}
+@font-face{font-family:Ranade;font-style:normal;font-weight:400;font-display:swap;src:url('assets/fonts/ranade-regular.woff2?v=0.0.9.0') format('woff2')}
+@font-face{font-family:Ranade;font-style:normal;font-weight:500;font-display:swap;src:url('assets/fonts/ranade-medium.woff2?v=0.0.9.0') format('woff2')}
 .figure-top .eyebrow {
   display:flex;
   align-items:center;
@@ -1262,7 +1262,7 @@ button:disabled {
   padding:12px 20px;
   background:var(--ink);
   color:var(--paper);
-  z-index:10;
+  z-index:30;
 }
 .skip-link:focus {
   top:16px;
@@ -1480,14 +1480,23 @@ button:disabled {
   height:13px;
 }
 .preview-status {
-  display:flex;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:0 8px;
   font-size:14px;
   color:var(--muted);
-  margin:22px 0 0;
-  line-height:1.5;
+  margin:0 0 20px;
+  line-height:1.6;
+}
+.preview-status strong,.preview-status span {
+  display:block;
+}
+.preview-status strong {
+  color:var(--ink);
+  font-weight:500;
+}
+.preview-requirements {
+  font-size:14px;
+  color:var(--muted);
+  margin:16px 0 0;
+  line-height:1.6;
 }
 .github-link {
   display:inline-flex;
@@ -1944,7 +1953,7 @@ button:disabled {
 .policy-flow figcaption { font-size:13px;margin-bottom:26px;color:var(--muted); }
 .policy-flow ol { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));list-style:none;margin:0;padding:0;gap:20px; }
 .policy-flow li { position:relative;display:flex;flex-direction:column;align-items:flex-start;font-size:14px;min-width:0; }
-.policy-flow li:not(:last-child)::after { content:'→';position:absolute;top:14px;right:6px;color:var(--orange-dark);font-size:22px; }
+.policy-flow .policy-flow-arrow { position:absolute;top:14px;right:6px;width:22px;height:22px;color:var(--orange-dark); }
 .policy-flow-symbol { display:inline-flex;align-items:center;justify-content:center;width:49px;height:49px;border:1px solid #e0bca0;background:#fff9f1;border-radius:15px;margin-bottom:15px;color:var(--orange-dark); }
 .policy-flow-symbol svg { width:25px;height:25px; }
 .policy-flow strong { font-weight:500;margin-bottom:4px;line-height:1.6; }
@@ -2203,6 +2212,9 @@ body{background-color:#fff7ef}
 .hero-tagline{font-size:clamp(32px,3.7vw,52px);line-height:1.12;letter-spacing:-.045em}
 .brand-intro>p{font-size:17px;color:var(--muted);margin-top:32px}
 .brand-intro .text-link{margin-top:16px;gap:24px}
+.brand-intro .setup-availability{font-size:16px;line-height:1.7;margin-top:24px}
+.setup-availability strong{color:var(--ink);font-weight:500}
+.preview-actions{display:flex;flex-wrap:wrap;justify-content:center;column-gap:32px}
 .setup-section{background:linear-gradient(180deg,#efd1b94d,#fff7ef00 80%);padding-block:32px}
 .setup-journey{list-style:none;padding:0;margin-block:0;scroll-margin-top:96px}
 .setup-step{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:80px;padding:80px 24px;border-top:1px solid var(--line);min-height:520px}

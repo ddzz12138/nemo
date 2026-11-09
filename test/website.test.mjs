@@ -86,7 +86,10 @@ test('the complete accessible hero is delivered in HTML, before enhancement', ()
   assert.ok(!figure.includes('reply-shell-hidden'));
   assert.ok(!/<(?:input|textarea|button|form)\b/.test(figure), 'phone controls stay inert');
   assert.ok(!/hero-controls|id="(?:finish|replay)"|aria-live/.test(home), 'decorative looping needs no manual controls or repeated live announcements');
-  assert.ok(home.includes('<span class="sr-only">For everyone</span>'));
+  const heading = home.match(/<h1 id="hero-title">([\s\S]*?)<\/h1>/)?.[1];
+  assert.ok(heading, 'hero has a real heading before scripts run');
+  assert.equal(text(heading), 'A personal AI. For everyday life.');
+  assert.ok(!/aria-hidden|audience-word/.test(heading), 'the accepted message remains visible and stable');
   assert.ok(home.includes('Illustrative sequence. Gmail is optional; saved notes can inform ChatGPT replies.'));
 });
 
