@@ -1,0 +1,16 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-11-09",
+  "assets": [
+    {
+      "file": "home-v1.webp",
+      "original": "exec-9bccb374-1b9b-4407-ad97-6d5b37fe7daa.png",
+      "prompt": "Use case: photorealistic-natural\nAsset type: wide photographic hero background for Nemo, a warm orange personal AI website for home and family life.\nPrimary request: Create an ambitious, beautifully art-directed architectural editorial photograph of a lived-in Australian home in late afternoon. It should feel like a still from a quiet independent film, welcoming and tactile rather than a luxury real-estate advertisement.\nScene: a sunlit dining corner opening to a leafy garden, honey oak table, one sculptural burnt-orange chair, warm plaster, soft linen curtain, a small ceramic bowl and an open notebook as restrained signs of daily life. No people, no devices.\nComposition: panoramic landscape 3:2. The left half contains the recognizable room and garden view; the right third recedes into a darker warm olive/plaster wall with natural shadow, simple enough for a website headline overlay. Strong architectural framing, believable perspective, crisp material detail, generous quiet space, natural asymmetry.\nLight: dramatic but soft low sunlight crossing the timber floor and table, detailed shadow tones, warm highlights and deep olive shadows. Contemporary editorial interior photography, 35mm lens, subtle photographic grain, realistic patina.\nConstraints: no text, logos, watermarks, fake interfaces, AI hardware, glowing orbs, neon, surreal geometry or excessive props. This is an imagined home, not a product rendering. Output a polished photographic image with no border."
+    },
+    {
+      "file": "picnic-v1.webp",
+      "original": "exec-0a836cc0-bd1e-4f20-aadf-32fecd89d38c.png",
+      "prompt": "Use case: photorealistic-natural\nAsset type: full-width editorial photograph for the future family-planning story on the Nemo personal AI website.\nPrimary request: A cinematic, tactile photograph of a quiet picnic ready for a family in a coastal Australian park. Convey room to breathe and time together, with no people in frame.\nScene: a soft terracotta linen picnic blanket on sunlit grass beneath a broad eucalyptus, a modest woven basket with bread, oranges and two plain enamel cups; rolling grass slopes gently toward a calm blue-green bay in the distance. Nothing posed into a perfect flat lay. An inviting, believable lived moment with restrained objects.\nComposition: expansive landscape 3:2, camera at picnic height, picnic in the lower right third, open grassy area and layered tree shadows across the left, airy distant horizon. Balanced asymmetry, editorial magazine photography, 50mm natural perspective.\nLighting and palette: late afternoon side-light, soft olive greens, warm ochre and burnt-orange fabric, creamy sunlight, muted blue-green water. Rich photographic detail with subtle natural grain.\nConstraints: no people, no text, no logos, no devices, no futuristic objects, no extra duplicated props, no border or watermarks. This is an imagined scene, not evidence of an available feature."
+    }
+  ]
+}

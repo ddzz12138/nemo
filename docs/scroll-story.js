@@ -63,6 +63,17 @@
     });
   });
 
+  // Editorial scenes add depth around the static, accessible product story.
+  media.add('(min-width: 961px) and (prefers-reduced-motion: no-preference)', () => {
+    for (const [target, trigger] of [['.belief-photo img', '.belief-photo']]) {
+      if (!document.querySelector(target)) continue;
+      gsap.fromTo(target, { scale: 1.08, yPercent: -2 }, {
+        scale: 1.02, yPercent: 2, ease: 'none',
+        scrollTrigger: { trigger, start: 'top bottom', end: 'bottom top', scrub: .6 },
+      });
+    }
+  });
+
   // Local fonts can settle after initial layout; refresh geometry once they do.
   document.fonts?.ready.then(() => ScrollTrigger.refresh());
   window.addEventListener('pageshow', () => ScrollTrigger.refresh());
