@@ -16,9 +16,9 @@ colors:
 typography:
   display:
     fontFamily: "Ranade, Arial, sans-serif"
-    fontSize: "clamp(48px, 5.6vw, 88px)"
+    fontSize: "clamp(44px, 5vw, 76px)"
     fontWeight: 500
-    lineHeight: 1.035
+    lineHeight: 1.06
     letterSpacing: "-0.04em"
   headline:
     fontFamily: "Ranade, Arial, sans-serif"
@@ -101,7 +101,7 @@ components:
 
 Nemo places personal AI in a warm, lived-in setting. Ranade, orange conversation cues and the upright fictional phone remain the established identity; architectural daylight, forest-green narrative fields and open editorial spacing extend it. Photographic settings supply atmosphere while real HTML product illustrations explain the experience.
 
-This records the local six-page implementation on 9 November 2026, not a published release. Visual authority is `docs/styles.css` followed by `docs/editorial.css`; the latter overrides the older peach stage and capsule navigation. This was an approved amplification of an existing world, with no selected comp, random seed or new identity tournament. Home persuades; Setup, About and policy pages remain readable reference surfaces.
+This records the six-page implementation prepared for website version 0.0.9.0 on 9 November 2026. Visual authority is `docs/styles.css` followed by `docs/editorial.css`; the latter overrides the older peach stage and capsule navigation. This was an approved amplification of an existing world, with no selected comp, random seed or new identity tournament. Home persuades; Setup, About and policy pages remain readable reference surfaces.
 
 **Key Characteristics:**
 
@@ -147,7 +147,7 @@ Regular and medium weights keep the voice direct. Large headings use tight track
 
 ### Hierarchy
 
-- **Display:** Home promise; narrow layouts progressively scale to a 36–48px clamp at the smallest breakpoint.
+- **Display:** Home promise; layouts at 760px and below use `clamp(34px, 9vw, 59.28px)`.
 - **Headline:** story and personal-example introductions; mobile steps are 48px and then 40px.
 - **Chapter:** the three story headings; the smallest layout uses 40px.
 - **Title:** policy-section headings. Page and setup titles have their own editorial scales.
@@ -174,7 +174,7 @@ The page is open and mostly flat. Photography, forest-to-paper transitions, text
 
 ### Shadow Vocabulary
 
-- **Phone in setting:** `inset 0 0 0 1px #ecebe8, inset 0 0 0 3px #767572, 0 30px 60px #15201980`.
+- **Phone in setting:** `inset 0 0 0 1px #ecebe8, inset 0 0 0 3px #767572, 0 20px 32px -12px #523c2833`.
 - **Illustrated reply:** `0 16px 40px #60432e17`, for memory and child-learning examples.
 - **Action hover:** `0 8px 24px #5c38252a`, inherited by dark actions; the orange hero action removes it.
 
@@ -226,7 +226,7 @@ The public Windows source is a development preview for invited adults aged 18+. 
 
 Calendar/Gmail are optional with separate setup. Child-learning examples do not guarantee prevention of every unsuitable answer or workaround; public child access awaits provider and safety review. The hardware teaser is abstract, with no actual prototype, specification or availability promise. Policies identify Dan Zheng, Australia, and the existing contact address. Do not add a waitlist, form, tracking, Google-verification claim, enabled-zero-retention claim or legal certification.
 
-GitHub Pages publishes only the verified `docs/` artifact through the existing main-branch workflow; this local revision is not a publication. GSAP/ScrollTrigger 3.13.0 are checked in and locally served with their notices, without library-CDN requests. The static site needs no npm installation/build. Preserve font preparation, both custom-script syntax checks and static fallbacks. VERSION/CHANGELOG track the website only. This visual system authorizes no application, installed-software, private-data, hardware or legacy Sites redirect changes.
+GitHub Pages publishes only the verified `docs/` artifact through the existing main-branch workflow; deployment evidence establishes publication separately from this design record. GSAP/ScrollTrigger 3.13.0 are checked in and locally served with their notices, without library-CDN requests. The static site needs no npm installation/build. Preserve font preparation, both custom-script syntax checks and static fallbacks. VERSION/CHANGELOG track the website only. This visual system authorizes no application, installed-software, private-data, hardware or legacy Sites redirect changes.
 
 ## Do's and Don'ts
 
